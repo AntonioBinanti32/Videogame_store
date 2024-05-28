@@ -6,11 +6,10 @@
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/exception/bulk_write_exception.hpp>
-//TODO EXCEPTIONS
-//#include "../exceptions/LoginException.h"
-//#include "../exceptions/SignupException.h"
-//#include "../exceptions/UploadException.h"
-//#include <nlohmann/json.hpp>
+#include "../exceptions/LoginException.h"
+#include "../exceptions/SignupException.h"
+#include "../exceptions/UploadException.h"
+#include <nlohmann/json.hpp>
 
 
 class MongoDB {

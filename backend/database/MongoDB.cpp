@@ -44,8 +44,7 @@ void MongoDB::signup(const std::string& username, const std::string& pwd) noexce
         userCollection.insert_one(doc_value);
     }
     catch (mongocxx::bulk_write_exception& e) {
-        //TODO: Sollevare eccezione
-        //throw new SignupException("Utente già presente");
+        throw new SignupException("Utente già presente");
     }
 }
 
@@ -59,8 +58,7 @@ void MongoDB::login(const std::string& username, const std::string& pwd) noexcep
     // Ricerca documento nella collezione
     auto find_one_result = userCollection.find_one(doc_value);
     if (!find_one_result) {
-        // TODO: Sollevare eccezione
-        // throw LoginException("User non presente");
+        throw LoginException("User non presente");
     }
 }
 

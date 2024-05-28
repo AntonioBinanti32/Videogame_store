@@ -4,22 +4,17 @@
 #include "INIReader.h"
 //TODO: Implementare Exceptions
 //TODO: Implementare Socket se serve comunicare con altri componenti (es con rete neuronale, vedi handler.cpp)
-//TODO: Implementare altra ogica backend (Es: suggerimenti e preferenze utente)
+//TODO: Implementare altra logica backend (Es: suggerimenti e preferenze utente)
 
 using namespace std;
 
 
 int main() {
 
-    std::cout << "Directory corrente: " << std::filesystem::current_path() << "\n";
-    std::cout << "Directory file: " << __FILE__ << "\n";
-
-    //TODO: Sistemare problema per il path del config
+    // Recupero file config.ini e relative variabili
     string filePath = __FILE__;
     size_t lastSlashPos = filePath.find_last_of("/\\");
     string path =  filePath.substr(0, lastSlashPos);
-
-    std::cout << "Percorso del file di configurazione: " << path << "\n";
 
     string config_file = path + "/config/config.ini";
 
@@ -29,9 +24,6 @@ int main() {
     }
     INIReader reader(config_file);
 
-
-    //INIReader reader("../config/config.ini");
-    //INIReader reader("C:/Users/AntonioBinanti/Documents/Uni/Secondo anno/Advanced Programming Languages/git/Videogame_store/backend/config/config/config.ini");
     if (reader.ParseError() < 0) {
         std::cout << "Can't load 'config.ini'\n";
         return 1;
@@ -50,8 +42,9 @@ int main() {
         // Inizializzazione ed avvio del server
         Server server;
         server.set_server_port(server_port);
-        server.set_server_threading(std::thread::hardware_concurrency());
-        // avvio la connessione con il server di mongoDB e il server di Minio
+        //TODO: Vedere se necessario utilizzare threads
+        //server.set_server_threading(std::thread::hardware_concurrency());
+        // Avvio la connessione con il server di mongoDB
         server.connect_to_mongodb(host, port, database, username, password);
         //TODO: Aggiungere altri entrypoints
         // Setto gli endpoint su cui risponderà il server

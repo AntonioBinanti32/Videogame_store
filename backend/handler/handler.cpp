@@ -17,19 +17,22 @@ namespace videogame_store::handler {
                 nlohmann::json requestJson = nlohmann::json::parse(body.data());
                 std::string username = requestJson["username"];
                 std::string password = requestJson["password"];
+                std::string imageUrl = requestJson["imageUrl"];
+
+                if (imageUrl.empty()) {
+                    imageUrl = "https://example.com/default_image.png";
+                }
                 try {
                     // Registro l'utente sul database
                     MongoDB* mongoDb = MongoDB::getInstance();
-                    mongoDb->signup(username, password);
+                    mongoDb->signup(username, password, imageUrl);
                     // Restituisco all'utente un jwt token che verrà usato per autenticare l'utente per le varie richieste
                     jwt::jwt_object obj{ jwt::params::algorithm("HS256"), jwt::params::payload({{"username", username}}), jwt::params::secret("secret") };
                     // Aggiunta scadenza al token
                     obj.add_claim("exp", std::chrono::system_clock::now() + std::chrono::hours(2));
                     session->close(restbed::OK, obj.signature(), { { "Content-Length", to_string(obj.signature().length())}, {"Content-Type", "text/html"},{ "Connection", "close" } });
                 }
-                //TODO: SignupException
-                //catch (SignupException& e) {
-                catch (exception& e){
+                catch (SignupException& e) {
                     session->close(restbed::BAD_REQUEST, e.what(), { { "Content-Length", to_string(strlen(e.what()))}, {"Content-Type", "text/html"},{ "Connection", "close" } });
                 }
 
@@ -57,9 +60,7 @@ namespace videogame_store::handler {
                     obj.add_claim("exp", std::chrono::system_clock::now() + std::chrono::hours(2));
                     session->close(restbed::OK, obj.signature(), { { "Content-Length", to_string(obj.signature().length())}, {"Content-Type", "text/html"},{ "Connection", "close" } });
                 }
-                //TODO: SignupException
-                //catch (LoginException& e) {
-                catch (exception& e) {
+                catch (LoginException& e) {
                     session->close(restbed::BAD_REQUEST, "User non presente", { { "Content-Length", "17"}, {"Content-Type", "text/html"},{ "Connection", "close" } });
                 }
 
@@ -90,5 +91,16 @@ namespace videogame_store::handler {
     }
 
     //TODO: Implementare altri metodi per gestione richieste
+    //addGame
+    //getGames
+    //getGame
+    //addReview
+    //getReview
+    //addReservation
+    //getReservation
+    //getRecommendations
+    //updateUser
+    //updateGame
+    //updateRecommendation
 
 }

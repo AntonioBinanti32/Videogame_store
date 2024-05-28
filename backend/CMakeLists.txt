@@ -5,7 +5,7 @@ project(Videogame_store)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Videogame_store "main.cpp" "database/MongoDB.cpp" "database/MongoDB.cpp" "server/server.h" "server/server.cpp" "handler/handler.h" "handler/handler.cpp" "exceptions/SignupException.h" "exceptions/LoginException.h")
+add_executable(Videogame_store "main.cpp" "database/MongoDB.cpp" "database/MongoDB.cpp" "server/server.h" "server/server.cpp" "handler/handler.h" "handler/handler.cpp" "exceptions/SignupException.h" "exceptions/LoginException.h" "exceptions/CreateGameException.h" "exceptions/GetGameException.h" "exceptions/UserNotFoundException.h" "exceptions/CreateReservationException.h" "exceptions/GetRecommendationsException.h")
 
 find_package(mongocxx CONFIG REQUIRED)
 #se esiste una versione statica della libreria mongocxx (mongo::mongocxx_static) la collega. Altrimenti, collega la versione condivisa (mongo::mongocxx_shared).

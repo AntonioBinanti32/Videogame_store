@@ -1,106 +1,89 @@
 #include "Handler.h"
-//#include "cpp-base64/base64.cpp"
+#include <iostream>
+#include <sstream>
 
-using namespace std;
+namespace handler {
 
-namespace videogame_store::handler {
-
-    // Gestisce le richieste POST di registrazione al servizio
-    void signup_handler(const std::shared_ptr<restbed::Session> session) {
-        cout << "signup" << endl;
-        const auto request = session->get_request();
-        size_t content_length = request->get_header("Content-Length", 0);
-        // Lettura dati e gestione richiesta HTTP
-        session->fetch(content_length, [request](const std::shared_ptr< restbed::Session > session, const restbed::Bytes& body)
-            {
-                // Analizzo il payload associato alla richiesta POST e lo converto in un JSON
-                nlohmann::json requestJson = nlohmann::json::parse(body.data());
-                std::string username = requestJson["username"];
-                std::string password = requestJson["password"];
-                std::string imageUrl = requestJson["imageUrl"];
-
-                if (imageUrl.empty()) {
-                    imageUrl = "https://example.com/default_image.png";
-                }
-                try {
-                    // Registro l'utente sul database
-                    MongoDB* mongoDb = MongoDB::getInstance();
-                    mongoDb->signup(username, password, imageUrl);
-                    // Restituisco all'utente un jwt token che verrà usato per autenticare l'utente per le varie richieste
-                    jwt::jwt_object obj{ jwt::params::algorithm("HS256"), jwt::params::payload({{"username", username}}), jwt::params::secret("secret") };
-                    // Aggiunta scadenza al token
-                    obj.add_claim("exp", std::chrono::system_clock::now() + std::chrono::hours(2));
-                    session->close(restbed::OK, obj.signature(), { { "Content-Length", to_string(obj.signature().length())}, {"Content-Type", "text/html"},{ "Connection", "close" } });
-                }
-                catch (SignupException& e) {
-                    session->close(restbed::BAD_REQUEST, e.what(), { { "Content-Length", to_string(strlen(e.what()))}, {"Content-Type", "text/html"},{ "Connection", "close" } });
-                }
-
-            });
-    }
-
-    // Gestisce le richieste POST di login al servizio
-    void login_handler(const std::shared_ptr<restbed::Session> session) {
-        cout << "login" << endl;
-        const auto request = session->get_request();
-        size_t content_length = request->get_header("Content-Length", 0);
-        // Lettura dati e gestione richiesta HTTP
-        session->fetch(content_length, [request](const std::shared_ptr< restbed::Session > session, const restbed::Bytes& body)
-            {
-                // Analizzo il payload associato alla richiesta POST e lo converto in un JSON
-                nlohmann::json requestJson = nlohmann::json::parse(body.data());
-                std::string username = requestJson["username"];
-                std::string password = requestJson["password"];
-                try {
-                    // Controllo se l'utente è presente nel database
-                    MongoDB* mongoDb = MongoDB::getInstance();
-                    mongoDb->login(username, password);
-                    // Restituisco all'utente un jwt token che verrà usato per autenticare l'utente per le varie richieste di upload, get e like
-                    jwt::jwt_object obj{ jwt::params::algorithm("HS256"), jwt::params::payload({{"username", username}}), jwt::params::secret("secret") };
-                    obj.add_claim("exp", std::chrono::system_clock::now() + std::chrono::hours(2));
-                    session->close(restbed::OK, obj.signature(), { { "Content-Length", to_string(obj.signature().length())}, {"Content-Type", "text/html"},{ "Connection", "close" } });
-                }
-                catch (LoginException& e) {
-                    session->close(restbed::BAD_REQUEST, "User non presente", { { "Content-Length", "17"}, {"Content-Type", "text/html"},{ "Connection", "close" } });
-                }
-
-            });
-    }
-
-    // Gestisce le richieste POST di upload
-    void upload_handler(const std::shared_ptr< restbed::Session > session) {
-        cout << "upload" << endl;
-        std::string username;
-        const auto request = session->get_request();
-        size_t content_length = request->get_header("Content-Length", 0);
-        auto token = request->get_header("Authorization", "");
-        try {
-            // Verifico che il token passato nel campo Authorization del header sia corretto; se così non fosse restituisco un errore al client
-            auto dec_token = jwt::decode(token, jwt::params::algorithms({ "HS256" }), jwt::params::secret("secret"));
-            username = dec_token.payload().get_claim_value<std::string>("username");
+    void handleLogin(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        // Parsare il messaggio di login per ottenere username e password
+        std::istringstream iss(message);
+        std::string username, password;
+        if (std::getline(iss, username, '/') && std::getline(iss, password, '/')) {
+            std::cout << "Handling login for username: " << username << ", password: " << password << std::endl;
+            const char* response = "Login successful \n";
+            if (!serverSocket.sendMessage(response, clientSocket)) {
+                std::cerr << "Failed to send response." << std::endl;
+            }
         }
-        catch (const jwt::TokenExpiredError& e) {
-            session->close(restbed::UNAUTHORIZED, e.what(), { { "Content-Length", to_string(strlen(e.what()))}, {"Content-Type", "text/html"},{ "Connection", "close" } });
-            return;
+        else {
+            const char* response = "Invalid login format";
+            send(clientSocket, response, static_cast<int>(strlen(response)), 0);
         }
-        //TODO: Implementare gestione richiesta
-        /*session->fetch(content_length, [request, username](const std::shared_ptr< restbed::Session > session, const restbed::Bytes& body)
-            {
-                
-            }*/
     }
 
-    //TODO: Implementare altri metodi per gestione richieste
-    //addGame
-    //getGames
-    //getGame
-    //addReview
-    //getReview
-    //addReservation
-    //getReservation
-    //getRecommendations
-    //updateUser
-    //updateGame
-    //updateRecommendation
+    void handleSignup(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        // Parsare il messaggio di registrazione per ottenere username e password
+        std::istringstream iss(message);
+        std::string username, password;
+        if (std::getline(iss, username, '/') && std::getline(iss, password, '/')) {
+            std::cout << "Handling signup for username: " << username << ", password: " << password << std::endl;
+            const char* response = "Signup successful \n";
+            if (!serverSocket.sendMessage(response, clientSocket)) {
+                std::cerr << "Failed to send response." << std::endl;
+            }
+        }
+        else {
+            const char* response = "Invalid signup format";
+            send(clientSocket, response, static_cast<int>(strlen(response)), 0);
+        }
+    }
+
+    void handleClient(SocketTcp& serverSocket, SOCKET clientSocket) {
+        char recvbuf[512];
+        int recvbuflen = sizeof(recvbuf);
+
+        if (clientSocket != INVALID_SOCKET) {
+            std::cout << "Client connected." << std::endl;
+            bool clientConnected = true;
+            while (clientConnected) {
+                if (serverSocket.receiveMessage(recvbuf, recvbuflen)) {
+                    std::string message(recvbuf);
+                    std::cout << "Received: " << message << std::endl;
+
+                    // Controllo messaggi
+                    if (message.rfind("login/", 0) == 0) {
+                        handleLogin(message.substr(6), /*std::move(*/ serverSocket/*)*/, clientSocket);
+                    }
+                    else if (message.rfind("signup/", 0) == 0) {
+                        handleSignup(message.substr(7), /*std::move(*/serverSocket/*)*/, clientSocket);
+                    }
+                    else if (message == "exit") {
+                        const char* response = "Goodbye!";
+                        if (!serverSocket.sendMessage(response, clientSocket)) {
+                            std::cerr << "Failed to send response." << std::endl;
+                        }
+                        clientConnected = false;
+                    }
+                    else {
+                        const char* response = "Unknown command";
+                        if (!serverSocket.sendMessage(response, clientSocket)) {
+                            std::cerr << "Failed to send response." << std::endl;
+                        }
+                    }
+                    memset(recvbuf, 0, recvbuflen);
+                }
+                else {
+                    // Gestisci la disconnessione del client
+                    std::cerr << "Client disconnected." << std::endl;
+                    clientConnected = false;
+                }
+            }
+            // Chiudi la connessione e pulisci le risorse
+            closesocket(clientSocket);
+        }
+        else {
+            std::cerr << "Failed to accept client connection." << std::endl;
+        }
+    }
 
 }

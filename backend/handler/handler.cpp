@@ -52,10 +52,10 @@ namespace handler {
 
                     // Controllo messaggi
                     if (message.rfind("login/", 0) == 0) {
-                        handleLogin(message.substr(6), /*std::move(*/ serverSocket/*)*/, clientSocket);
+                        handleLogin(message.substr(6), serverSocket, clientSocket);
                     }
                     else if (message.rfind("signup/", 0) == 0) {
-                        handleSignup(message.substr(7), /*std::move(*/serverSocket/*)*/, clientSocket);
+                        handleSignup(message.substr(7), serverSocket, clientSocket);
                     }
                     else if (message == "exit") {
                         const char* response = "Goodbye!";
@@ -82,7 +82,7 @@ namespace handler {
             closesocket(clientSocket);
         }
         else {
-            std::cerr << "Failed to accept client connection." << std::endl;
+            throw new HandlerException("Failed to accept client connection.");
         }
     }
 

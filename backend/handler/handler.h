@@ -2,6 +2,7 @@
 #define VIDEOGAME_STORE_HANDLER_H
 
 #include "../socketTcp/SocketTcp.h"
+#include "../exceptions/HandlerException.h"
 
 namespace handler {
 	void handleClient(SocketTcp& serverSocket, SOCKET clientSocker);

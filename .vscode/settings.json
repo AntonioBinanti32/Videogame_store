@@ -1,0 +1,11 @@
+{
+    "cmake.configureSettings": {
+        //"CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "${VCPKG_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+    },
+    "cmake.generator": "Ninja",
+    "cmake.sourceDirectory": "C:/Users/AntonioBinanti/Documents/Uni/Secondo anno/Advanced Programming Languages/git/Videogame_store/backend",
+    "files.associations": {
+        "iostream": "cpp"
+    }
+}

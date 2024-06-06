@@ -37,14 +37,6 @@ int main() {
     const char* serverPort = serverTcpPort.c_str();
 
     try {
-        //TODO: Creazione socket per comincare con modulo GO: vedere https://bitbucket.org/sloankelly/youtube-source-repository/src/master/cpp/networking/MultipleClientsBarebonesServer/MultipleClientsBarebonesServer/main.cpp
-        // TODO: sistemare server per accettare richieste da modulo Go
-        // Inizializzazione ed avvio del server
-        //ServerTcp server;
-        // Avvio la connessione con il server di mongoDB
-        //server.connect_to_mongodb(host, port, database, username, password);
-        // Avvio il server per gestire le richieste TCP
-        //server.start(serverTcpPort);
         // Inizializzazione del server
         SocketTcp serverSocket;
         serverSocket.initializeServer(serverPort);
@@ -63,6 +55,8 @@ int main() {
                 std::cout << "New client connected." << std::endl;
 
                 // Crea un thread separato per gestire il client
+                //TODO: Implementare logica dell'handler
+                //TODO: Implementare le exceptions dell'handler
                 clientThreads.emplace_back(handler::handleClient, std::ref(serverSocket), clientSocket);
             }
             else {

@@ -18,7 +18,7 @@ void Server::set_server_threading(const unsigned int& number_thread) {
     settings->set_worker_limit(number_thread);
 }
 
-// ollegamento al server di mongoDB specificando host e porta su cui è in ascolto, il database da usare e le credenziali per accedere
+// Collegamento al server di mongoDB specificando host e porta su cui è in ascolto, il database da usare e le credenziali per accedere
 void Server::connect_to_mongodb(const std::string& hostname, const std::string& port, const std::string& database, const std::string& username, const std::string& password) {
     MongoDB* mongoDb = MongoDB::getInstance();
     mongoDb->connectDB(hostname, port, database, username, password);

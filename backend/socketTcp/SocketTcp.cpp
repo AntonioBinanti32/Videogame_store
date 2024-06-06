@@ -12,8 +12,7 @@ bool SocketTcp::initializeServer(const char* port) {
     // Inizializzazione di Winsock versione 2.2
     int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0) {
-        //TODO: throw new ScketException("WSAStartup failed with error: " << iResult << std::endl")
-        std::cerr << "WSAStartup failed with error: " << iResult << std::endl;
+        throw new SocketException("WSAStartup failed with error: " + iResult );
         return false;
     }
     return setupHints(true, nullptr, port) && createSocket();
@@ -22,8 +21,7 @@ bool SocketTcp::initializeServer(const char* port) {
 bool SocketTcp::initializeClient(const char* address, const char* port) {
     int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0) {
-        //TODO: throw new ScketException("WSAStartup failed with error: " << iResult << std::endl")
-        std::cerr << "WSAStartup failed with error: " << iResult << std::endl;
+        throw new SocketException("WSAStartup failed with error: " + iResult);
         return false;
     }
     return setupHints(false, address, port) && createSocket();
@@ -41,8 +39,7 @@ bool SocketTcp::setupHints(bool isServer, const char* address, const char* port)
 
     int iResult = getaddrinfo(address, port, &hints, &result);
     if (iResult != 0) {
-        //TODO: throw new ScketException(""getaddrinfo failed with error: " << iResult << std::endl")
-        std::cerr << "getaddrinfo failed with error: " << iResult << std::endl;
+        throw new SocketException("getaddrinfo failed with error: " + iResult );
         WSACleanup();
         return false;
     }
@@ -52,8 +49,7 @@ bool SocketTcp::setupHints(bool isServer, const char* address, const char* port)
 bool SocketTcp::createSocket() {
     Socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (Socket == INVALID_SOCKET) {
-        //TODO: throw new ScketException(""Error at socket(): " << WSAGetLastError() << std::endl")
-        std::cerr << "Error at socket(): " << WSAGetLastError() << std::endl;
+        throw new SocketException("Error at socket(): " + WSAGetLastError());
         freeaddrinfo(result);
         WSACleanup();
         return false;
@@ -61,9 +57,8 @@ bool SocketTcp::createSocket() {
 
     if (hints.ai_flags & AI_PASSIVE) {
         // Bind server socket
-        if (bind(Socket, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR) {
-            //TODO: throw new ScketException(""Bind failed with error: " << WSAGetLastError() << std::endl")
-            std::cerr << "Bind failed with error: " << WSAGetLastError() << std::endl;
+        if (::bind(Socket, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR) {
+            throw new SocketException("Bind failed with error: " + WSAGetLastError());
             freeaddrinfo(result);
             closesocket(Socket);
             WSACleanup();
@@ -72,6 +67,11 @@ bool SocketTcp::createSocket() {
     }
 
     return true;
+}
+
+void SocketTcp::connect_to_mongodb(const std::string& hostname, const std::string& port, const std::string& database, const std::string& username, const std::string& password) {
+    MongoDB* mongoDb = MongoDB::getInstance();
+    mongoDb->connectDB(hostname, port, database, username, password);
 }
 
 void SocketTcp::cleanup() {
@@ -92,8 +92,7 @@ void SocketTcp::cleanup() {
 
 bool SocketTcp::listenForConnections(int backlog) {
     if (listen(Socket, backlog) == SOCKET_ERROR) {
-        //TODO: throw new ScketException(""Listen failed with error: " << WSAGetLastError() << std::endl")
-        std::cerr << "Listen failed with error: " << WSAGetLastError() << std::endl;
+        throw new SocketException("Listen failed with error: " + WSAGetLastError());
         cleanup();
         return false;
     }
@@ -103,8 +102,7 @@ bool SocketTcp::listenForConnections(int backlog) {
 SOCKET SocketTcp::acceptConnection() {
     ClientSocket = accept(Socket, nullptr, nullptr);
     if (ClientSocket == INVALID_SOCKET) {
-        //TODO: throw new ScketException(""Accept failed with error: " << WSAGetLastError() << std::endl")
-        std::cerr << "Accept failed with error: " << WSAGetLastError() << std::endl;
+        throw new SocketException("Accept failed with error: " + WSAGetLastError());
         cleanup();
         return INVALID_SOCKET;
     }
@@ -115,8 +113,7 @@ bool SocketTcp::sendMessage(const char* message, SOCKET clientSocket) {
     std::cout << "Socket" << clientSocket << " message: " << message << std::endl;
     int iResult = send(clientSocket, message, static_cast<int>(strlen(message)), 0);
     if (iResult == SOCKET_ERROR) {
-        //TODO: throw new ScketException(""Send failed with error: " << WSAGetLastError() << std::endl")
-        std::cerr << "Send failed with error: " << WSAGetLastError() << std::endl;
+        throw new SocketException("Send failed with error: " + WSAGetLastError());
         cleanup();
         return false;
     }
@@ -133,8 +130,7 @@ bool SocketTcp::receiveMessage(char* buffer, int bufferSize) {
         std::cout << "Connection closed" << std::endl;
     }
     else {
-        //TODO: throw new ScketException(""Receive failed with error: " << WSAGetLastError() << std::endl")
-        std::cerr << "Receive failed with error: " << WSAGetLastError() << std::endl;
+        throw new SocketException("Receive failed with error: " + WSAGetLastError());
     }
     return false;
 }
@@ -143,8 +139,7 @@ bool SocketTcp::connectToServer() {
     // Tentativo di connessione al Server
     int iResult = connect(Socket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
-        //TODO: throw new ScketException(""Connect failed with error: " << WSAGetLastError() << std::endl")
-        std::cerr << "Connect failed with error: " << WSAGetLastError() << std::endl;
+        throw new SocketException("Connect failed with error: " + WSAGetLastError());
         closesocket(Socket);
         Socket = INVALID_SOCKET;
         return false;

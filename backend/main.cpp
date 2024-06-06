@@ -47,40 +47,34 @@ int main() {
         //server.start(serverTcpPort);
         // Inizializzazione del server
         SocketTcp serverSocket;
-        if (serverSocket.initializeServer(serverPort)) {
-            std::cout << "Server socket initialized on port " << serverPort << std::endl;
+        serverSocket.initializeServer(serverPort);
+        std::cout << "Server socket initialized on port " << serverPort << std::endl;
+        //TODO: Implementare connessione a MongoDB
+        serverSocket.connect_to_mongodb(host, port, database, username, password);
+        std::cout << "Server connesso al db: " << database << ", host: " << host << ", port: " << port << "\n";
+        serverSocket.listenForConnections();
+        std::cout << "Listening for connections..." << std::endl;
+        std::vector<std::thread> clientThreads;
 
-            if (serverSocket.listenForConnections()) {
-                std::cout << "Listening for connections..." << std::endl;
-                std::vector<std::thread> clientThreads;
+        while (true) {
+            // Accetta una nuova connessione
+            SOCKET clientSocket = serverSocket.acceptConnection();
+            if (clientSocket != INVALID_SOCKET) {
+                std::cout << "New client connected." << std::endl;
 
-                while (true) {
-                    // Accetta una nuova connessione
-                    SOCKET clientSocket = serverSocket.acceptConnection();
-                    if (clientSocket != INVALID_SOCKET) {
-                        std::cout << "New client connected." << std::endl;
-
-                        // Crea un thread separato per gestire il client
-                        clientThreads.emplace_back(handler::handleClient, std::ref(serverSocket), clientSocket);
-                    }
-                    else {
-                        std::cerr << "Failed to accept client connection." << std::endl;
-                    }
-                }
-
-                // Detach dei thread per gestire clienti concorrenzialmente
-                for (auto& th : clientThreads) {
-                    if (th.joinable()) {
-                        th.detach();
-                    }
-                }
+                // Crea un thread separato per gestire il client
+                clientThreads.emplace_back(handler::handleClient, std::ref(serverSocket), clientSocket);
             }
             else {
-                std::cerr << "Failed to listen for connections." << std::endl;
+                std::cerr << "Failed to accept client connection." << std::endl;
             }
         }
-        else {
-            std::cerr << "Failed to initialize server socket." << std::endl;
+
+        // Detach dei thread per gestire clienti concorrenzialmente
+        for (auto& th : clientThreads) {
+            if (th.joinable()) {
+                th.detach();
+            }
         }
 
         // Attesa della connessione di 100 secondi prima di chiudere i threads

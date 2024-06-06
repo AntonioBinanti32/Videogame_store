@@ -247,7 +247,7 @@ std::chrono::system_clock::time_point MongoDB::convertToDate(const std::string& 
 }
 
 //TODO: Verificare metodi Update
-
+/*
 // Aggiornamento di un utente
 void MongoDB::updateUser(const std::string& username, const std::string& new_password, const std::string& new_imageUrl) {
     try {
@@ -300,7 +300,7 @@ void MongoDB::updateGame(const std::string& game_id, const std::string& new_titl
     catch (std::exception& e) {
         throw std::runtime_error("Errore durante l'aggiornamento del gioco");
     }
-}
+}*/
 
 //TODO: Sistemare funzione
 // Aggiornamento di una raccomandazione

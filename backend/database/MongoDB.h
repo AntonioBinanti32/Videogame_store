@@ -52,6 +52,7 @@ public:
     bsoncxx::document::value getReservation(const std::string& reservation_id);
     std::vector<bsoncxx::document::value> getRecommendations(const std::string& username);
     std::chrono::system_clock::time_point convertToDate(const std::string& date);
+   //TODO: Implementare funzioni update
     //void updateUser(const std::string& username, const std::string& new_password, const std::string& new_imageUrl);
     //void updateGame(const std::string& game_id, const std::string& new_title, const std::string& new_genre, const std::string& new_release_date, const std::string& new_developer, double new_price, int new_stock, const std::string& new_description, const std::string& new_imageUrl);
     //void updateRecommendation(const std::string& username, const std::vector<std::string>& new_recommendations);

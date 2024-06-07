@@ -3,6 +3,7 @@
 
 #include "../socketTcp/SocketTcp.h"
 #include "../exceptions/HandlerException.h"
+#include "../database/MongoDB.h"
 #include <string>
 
 namespace handler {

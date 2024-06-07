@@ -60,7 +60,7 @@ int main() {
                 clientThreads.emplace_back(handler::handleClient, std::ref(serverSocket), clientSocket);
             }
             else {
-                std::cerr << "Failed to accept client connection." << std::endl;
+                throw SocketException("Failed to accept client connection.");
             }
         }
 

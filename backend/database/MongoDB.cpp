@@ -1,5 +1,7 @@
 #include "MongoDB.h"
 
+//TODO: Installare MongoDB: https://www.youtube.com/watch?v=gB6WLkSrtJk
+
 MongoDB* MongoDB::INSTANCE;
 
 // Ottengo un'istanza di mongocxx da usare per comunicare col database
@@ -48,8 +50,17 @@ void MongoDB::signup(const std::string& username, const std::string& pwd, const 
         // Inserimento documento creato precedentemente nella collezione userCollection
         userCollection.insert_one(doc_value);
     }
-    catch (mongocxx::bulk_write_exception& e) {
-        throw new SignupException("Utente già presente");
+    catch (const mongocxx::bulk_write_exception& e) {        
+        std::cerr << "Utente già registrato " << e.what() << std::endl;
+        throw SignupException("Utente gia' registrato");
+    }
+    catch (const mongocxx::exception& e) {
+        std::cerr << "MongoDB exception: " << e.what() << std::endl;
+        throw;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "General exception: " << e.what() << std::endl;
+        throw;
     }
 }
 
@@ -63,7 +74,7 @@ void MongoDB::login(const std::string& username, const std::string& pwd) noexcep
     // Ricerca documento nella collezione
     auto find_one_result = userCollection.find_one(doc_value);
     if (!find_one_result) {
-        throw new LoginException("User non presente");
+        throw LoginException("User non presente o password non corretta");
     }
 }
 
@@ -84,7 +95,7 @@ void MongoDB::addGame(const std::string& title, const std::string& genre, const 
         gameCollection.insert_one(doc_value);
     }
     catch (mongocxx::bulk_write_exception& e) {
-        throw new CreateGameException("Errore durante l'aggiunta del gioco");
+        throw CreateGameException("Errore durante l'aggiunta del gioco");
     }
 }
 
@@ -98,7 +109,7 @@ std::vector<bsoncxx::document::value> MongoDB::getGames() {
         }
     }
     catch (std::exception& e) {
-        throw new GetGameException("Errore durante il recupero dei giochi");
+        throw  GetGameException("Errore durante il recupero dei giochi");
     }
     return games;
 }
@@ -113,7 +124,7 @@ bsoncxx::document::value MongoDB::getGame(const std::string& game_id) {
         return bsoncxx::document::value(*result);
     }
     catch (std::exception& e) {
-        throw new GetGameException("Errore durante il recupero del gioco");
+        throw GetGameException("Errore durante il recupero del gioco");
     }
 }
 
@@ -122,7 +133,7 @@ void MongoDB::addReview(const std::string& username, const std::string& game_id,
     try {
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
         if (!user_doc) {
-            throw new UserNotFoundException("User not found");
+            throw UserNotFoundException("User not found");
         }
         auto user_id = (*user_doc)["_id"].get_oid().value;
 
@@ -149,7 +160,7 @@ void MongoDB::addReview(const std::string& username, const std::string& game_id,
         );
     }
     catch (std::exception& e) {
-        throw new CreateReviewException("Errore durante l'aggiunta della recensione");
+        throw CreateReviewException("Errore durante l'aggiunta della recensione");
     }
 }
 
@@ -179,7 +190,7 @@ void MongoDB::addReservation(const std::string& username, const std::string& gam
     try {
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
         if (!user_doc) {
-            throw new UserNotFoundException("User not found");
+            throw UserNotFoundException("User not found");
         }
         auto user_id = (*user_doc)["_id"].get_oid().value;
 
@@ -196,7 +207,7 @@ void MongoDB::addReservation(const std::string& username, const std::string& gam
         );
     }
     catch (std::exception& e) {
-        throw new CreateReservationException("Errore durante l'aggiunta della prenotazione");
+        throw CreateReservationException("Errore durante l'aggiunta della prenotazione");
     }
 }
 
@@ -219,7 +230,7 @@ std::vector<bsoncxx::document::value> MongoDB::getRecommendations(const std::str
     try {
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
         if (!user_doc) {
-            throw new UserNotFoundException("User not found");
+            throw UserNotFoundException("User not found");
         }
         auto user_id = (*user_doc)["_id"].get_oid().value;
 
@@ -234,7 +245,7 @@ std::vector<bsoncxx::document::value> MongoDB::getRecommendations(const std::str
         return recommendations;
     }
     catch (std::exception& e) {
-        throw new GetRecommendationsException("Errore durante il recupero delle raccomandazioni");
+        throw GetRecommendationsException("Errore durante il recupero delle raccomandazioni");
     }
 }
 
@@ -409,7 +420,7 @@ void MongoDB::updateRecommendation(const std::string& username, const std::vecto
         // Trova il documento dell'utente
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
         if (!user_doc) {
-            throw new UserNotFoundException("User not found");
+            throw UserNotFoundException("User not found");
         }
         auto user_id = (*user_doc)["_id"].get_oid().value;
 

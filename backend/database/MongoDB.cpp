@@ -98,22 +98,6 @@ void MongoDB::addGame(const std::string& title, const std::string& genre, const 
         throw CreateGameException("Errore durante l'aggiunta del gioco");
     }
 }
-/*
-// Ottenimento della lista dei giochi
-std::vector<bsoncxx::document::value> MongoDB::getGames() {
-    std::vector<bsoncxx::document::value> games;
-    try {
-        auto cursor = gameCollection.find({});
-        for (auto&& doc : cursor) {
-            games.push_back(bsoncxx::document::value(doc));
-        }
-    }
-    catch (std::exception& e) {
-        throw  GetGameException("Errore durante il recupero dei giochi");
-    }
-    return games;
-}
-*/
 
 // Ottenimento della lista dei giochi
 nlohmann::json MongoDB::getGames() {
@@ -131,19 +115,32 @@ nlohmann::json MongoDB::getGames() {
 }
 
 // Ottenimento di un gioco specifico
-bsoncxx::document::value MongoDB::getGame(const std::string& game_id) {
+nlohmann::json MongoDB::getGame(const std::string& game_id) {
     try {
         auto result = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(game_id))));
         if (!result) {
-            throw std::runtime_error("Gioco non trovato");
+            throw GetGameException("Errore durante il recupero del gioco: Gioco non trovato");
         }
-        return bsoncxx::document::value(*result);
+        return nlohmann::json::parse(bsoncxx::to_json(*result));
     }
     catch (std::exception& e) {
         throw GetGameException("Errore durante il recupero del gioco");
     }
 }
 
+nlohmann::json MongoDB::getGameByTitle(const std::string& title) {
+    try {
+        auto result = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", title)));
+        if (!result) {
+            throw GetGameException("Errore durante il recupero del gioco: Gioco non trovato");
+        }
+        return nlohmann::json::parse(bsoncxx::to_json(*result));
+    }
+    catch (std::exception& e) {
+        throw GetGameException("Errore durante il recupero del gioco");
+    }
+}
+/*
 // Aggiunta di una recensione
 void MongoDB::addReview(const std::string& username, const std::string& game_id, const std::string& review_text, int rating) {
     try {
@@ -178,28 +175,129 @@ void MongoDB::addReview(const std::string& username, const std::string& game_id,
     catch (std::exception& e) {
         throw CreateReviewException("Errore durante l'aggiunta della recensione");
     }
+}*/
+
+void MongoDB::addReview(const std::string& username, const std::string& game_title, const std::string& review_text, int rating) {
+    try {
+        // Ottieni l'ID del gioco utilizzando il titolo fornito
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", game_title)));
+        if (!game_doc) {
+            throw GetGameException("Gioco non trovato");
+        }
+        auto game_id = (*game_doc)["_id"].get_oid().value;
+
+        // Ottieni l'ID dell'utente utilizzando lo username fornito
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("Utente non trovato");
+        }
+        auto user_id = (*user_doc)["_id"].get_oid().value;
+
+        // Costruisci il documento per la recensione
+        bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> review_doc = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("user_id", user_id),
+            bsoncxx::builder::basic::kvp("review_text", review_text),
+            bsoncxx::builder::basic::kvp("rating", rating),
+            bsoncxx::builder::basic::kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now()))
+        );
+
+        // Aggiungi la recensione al documento del gioco
+        gameCollection.update_one(
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", game_id)),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$push", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews", review_doc))))
+        );
+
+        // Aggiungi la recensione al documento dell'utente
+        userCollection.update_one(
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", user_id)),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$push", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews", bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("game_id", game_id),
+                bsoncxx::builder::basic::kvp("review_text", review_text),
+                bsoncxx::builder::basic::kvp("rating", rating),
+                bsoncxx::builder::basic::kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now()))
+            )))))
+        );
+    }
+    catch (std::exception& e) {
+        throw CreateReviewException("Errore durante l'aggiunta della recensione");
+    }
 }
 
+
 // Ottenimento di una recensione specifica
-bsoncxx::document::value MongoDB::getReview(const std::string& review_id) {
+nlohmann::json MongoDB::getReview(const std::string& review_id) {
     try {
         auto result = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews._id", bsoncxx::oid(review_id))));
         if (!result) {
-            throw std::runtime_error("Recensione non trovata");
+            throw ReviewException("Recensione non trovata");
         }
+
         auto reviews = (*result)["reviews"].get_array().value;
         for (const auto& review : reviews) {
             auto review_doc = review.get_document().value;
             if (review_doc["_id"].get_oid().value.to_string() == review_id) {
-                return bsoncxx::document::value(review_doc);
+                return nlohmann::json::parse(bsoncxx::to_json(review_doc));
             }
         }
-        throw std::runtime_error("Recensione non trovata");
+        throw ReviewException("Recensione non trovata");
     }
     catch (std::exception& e) {
-        throw std::runtime_error("Errore durante il recupero della recensione");
+        throw ReviewException("Errore durante il recupero della recensione");
     }
 }
+
+nlohmann::json MongoDB::getReviewByUser(const std::string& username) {
+    try {
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("Utente non trovato");
+        }
+        auto user_id = (*user_doc)["_id"].get_oid().value;
+
+        auto result = gameCollection.find(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews.user_id", user_id)));
+
+        nlohmann::json reviews_json;
+        for (const auto& doc : result) {
+            auto reviews = doc["reviews"].get_array().value;
+            for (const auto& review : reviews) {
+                auto review_doc = review.get_document().value;
+                if (review_doc["user_id"].get_oid().value == user_id) {
+                    reviews_json.push_back(nlohmann::json::parse(bsoncxx::to_json(review_doc)));
+                }
+            }
+        }
+        return reviews_json;
+    }
+    catch (std::exception& e) {
+        throw ReviewException("Errore durante il recupero delle recensioni dell'utente");
+    }
+}
+
+nlohmann::json MongoDB::getReviewByGame(const std::string& game_title) {
+    try {
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", game_title)));
+        if (!game_doc) {
+            throw GetGameException("Gioco non trovato");
+        }
+        auto game_id = (*game_doc)["_id"].get_oid().value;
+
+        auto result = gameCollection.find(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", game_id)));
+
+        nlohmann::json reviews_json;
+        for (const auto& doc : result) {
+            auto reviews = doc["reviews"].get_array().value;
+            for (const auto& review : reviews) {
+                auto review_doc = review.get_document().value;
+                reviews_json.push_back(nlohmann::json::parse(bsoncxx::to_json(review_doc)));
+            }
+        }
+        return reviews_json;
+    }
+    catch (std::exception& e) {
+        throw ReviewException("Errore durante il recupero delle recensioni del gioco");
+    }
+}
+
 
 // Aggiunta di una prenotazione
 void MongoDB::addReservation(const std::string& username, const std::string& game_id) {

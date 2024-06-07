@@ -69,6 +69,11 @@ namespace handler {
                 const char* response = "Game added successfully";
                 serverSocket.sendMessage(response, clientSocket);
             }
+            catch (const CreateGameException& e) {
+                std::string error = "Add game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
             catch (const std::exception& e) {
                 std::string error = "Add game failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
@@ -89,6 +94,11 @@ namespace handler {
             std::string response = games.dump(4); //Converte il JSON in una stringa formattata con indentazione
             serverSocket.sendMessage(response.c_str(), clientSocket);
         }
+        catch (const GetGameException& e) {
+            std::string error = "Get games failed: " + std::string(e.what());
+            serverSocket.sendMessage(error.c_str(), clientSocket);
+            return;
+        }
         catch (const std::exception& e) {
             std::string error = "Get games failed: " + std::string(e.what());
             serverSocket.sendMessage(error.c_str(), clientSocket);
@@ -101,11 +111,35 @@ namespace handler {
         std::string game_id;
         if (std::getline(iss, game_id, '/')) {
             try {
-                //bsoncxx::document::value game = getGame(game_id);
-                std::string response = "Game details:";  // Convert game to string
+                MongoDB* mongoDb = MongoDB::getInstance();
+                nlohmann::json games = mongoDb->getGame(game_id);
+                std::string response = games.dump(4); //Converte il JSON in una stringa formattata con indentazione
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
-            catch (const std::exception& e) {
+            catch (const GetGameException& e) {
+                std::string error = "Get game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid get game format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleGetGameByTitle(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string title;
+        if (std::getline(iss, title, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                nlohmann::json games = mongoDb->getGameByTitle(title);
+                std::string response = games.dump(4); //Converte il JSON in una stringa formattata con indentazione
+                serverSocket.sendMessage(response.c_str(), clientSocket);
+            }
+            catch (const GetGameException& e) {
                 std::string error = "Get game failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
@@ -123,8 +157,9 @@ namespace handler {
         std::string review_id;
         if (std::getline(iss, review_id, '/')) {
             try {
-                //bsoncxx::document::value review = getReview(review_id);
-                std::string response = "Review details:";  // Convert review to string
+                MongoDB* mongoDb = MongoDB::getInstance();
+                nlohmann::json review = mongoDb->getReview(review_id);
+                std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const std::exception& e) {
@@ -140,19 +175,76 @@ namespace handler {
         }
     }
 
+    void handleGetReviewByUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string user;
+        if (std::getline(iss, user, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                nlohmann::json review = mongoDb->getReviewByUser(user);
+                std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
+                serverSocket.sendMessage(response.c_str(), clientSocket);
+            }
+            catch (const ReviewException& e) {
+                std::string error = "Get review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const UserNotFoundException& e) {
+                std::string error = "Get review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid get review format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleGetReviewByGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string game_title;
+        if (std::getline(iss, game_title, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                nlohmann::json review = mongoDb->getReviewByGame(game_title);
+                std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
+                serverSocket.sendMessage(response.c_str(), clientSocket);
+            }
+            catch (const ReviewException& e) {
+                std::string error = "Get review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const GetGameException& e) {
+                std::string error = "Get review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid get review format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
     void handleAddReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_id, review_text, rating_str;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_id, '/') &&
+        std::string username, game_title, review_text, rating_str;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
             std::getline(iss, review_text, '/') && std::getline(iss, rating_str, '/')) {
 
             try {
                 int rating = std::stoi(rating_str);
-                //addReview(username, game_id, review_text, rating);
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->addReview(username, game_title, review_text, rating);
                 const char* response = "Review added successfully";
                 serverSocket.sendMessage(response, clientSocket);
             }
-            catch (const std::exception& e) {
+            catch (const CreateReviewException& e) {
                 std::string error = "Add review failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
@@ -266,8 +358,17 @@ namespace handler {
                     else if (message.rfind("getGame/", 0) == 0) {
                         handleGetGame(message.substr(8), serverSocket, clientSocket);
                     }
+                    else if (message.rfind("getGameByTitle/", 0) == 0) {
+                        handleGetGameByTitle(message.substr(15), serverSocket, clientSocket);
+                    }
                     else if (message.rfind("getReview/", 0) == 0) {
                         handleGetReview(message.substr(10), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("getReviewByUser/", 0) == 0) {
+                        handleGetReviewByUser(message.substr(16), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("getReviewByGame/", 0) == 0) {
+                        handleGetReviewByGame(message.substr(16), serverSocket, clientSocket);
                     }
                     else if (message.rfind("addReview/", 0) == 0) {
                         handleAddReview(message.substr(10), serverSocket, clientSocket);

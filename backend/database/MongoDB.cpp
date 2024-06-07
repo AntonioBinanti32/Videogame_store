@@ -98,7 +98,7 @@ void MongoDB::addGame(const std::string& title, const std::string& genre, const 
         throw CreateGameException("Errore durante l'aggiunta del gioco");
     }
 }
-
+/*
 // Ottenimento della lista dei giochi
 std::vector<bsoncxx::document::value> MongoDB::getGames() {
     std::vector<bsoncxx::document::value> games;
@@ -106,6 +106,22 @@ std::vector<bsoncxx::document::value> MongoDB::getGames() {
         auto cursor = gameCollection.find({});
         for (auto&& doc : cursor) {
             games.push_back(bsoncxx::document::value(doc));
+        }
+    }
+    catch (std::exception& e) {
+        throw  GetGameException("Errore durante il recupero dei giochi");
+    }
+    return games;
+}
+*/
+
+// Ottenimento della lista dei giochi
+nlohmann::json MongoDB::getGames() {
+    nlohmann::json games;
+    try {
+        auto cursor = gameCollection.find({});
+        for (auto&& doc : cursor) {
+            games.push_back(nlohmann::json ::parse(bsoncxx::to_json(doc)));
         }
     }
     catch (std::exception& e) {

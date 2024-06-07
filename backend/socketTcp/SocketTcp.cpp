@@ -115,7 +115,7 @@ bool SocketTcp::sendMessage(const char* message, SOCKET clientSocket) {
     size_t message_length = strlen(message);
     char* new_message = (char*)malloc(message_length + 2);
     strcpy(new_message, message);
-    strcat(new_message, "\n");
+    strcat(new_message, "|");
     int iResult = send(clientSocket, new_message, static_cast<int>(strlen(new_message)), 0);
     free(new_message);
     if (iResult == SOCKET_ERROR) {

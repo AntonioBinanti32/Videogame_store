@@ -44,7 +44,8 @@ public:
     void signup(const std::string& username, const std::string& pwd, const std::string& imageUrl) noexcept(false);
     void login(const std::string& username, const std::string& pwd) noexcept(false);
     void addGame(const std::string& title, const std::string& genre, const std::string& release_date, const std::string& developer, double price, int stock, const std::string& description, const std::string& imageUrl);
-    std::vector<bsoncxx::document::value> getGames();
+    //std::vector<bsoncxx::document::value> getGames();
+    nlohmann::json getGames();
     bsoncxx::document::value getGame(const std::string& game_id);
     bsoncxx::document::value getReview(const std::string& review_id);
     void addReview(const std::string& username, const std::string& game_id, const std::string& review_text, int rating);

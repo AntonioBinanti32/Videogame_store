@@ -64,7 +64,8 @@ namespace handler {
             try {
                 double price = std::stod(price_str);
                 int stock = std::stoi(stock_str);
-                //addGame(title, genre, release_date, developer, price, stock, description, imageUrl);
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->addGame(title, genre, release_date, developer, price, stock, description, imageUrl);
                 const char* response = "Game added successfully";
                 serverSocket.sendMessage(response, clientSocket);
             }
@@ -83,8 +84,9 @@ namespace handler {
 
     void handleGetGames(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         try {
-            //std::vector<bsoncxx::document::value> games = getGames();
-            std::string response = "Games list:";  // Convert games to string
+            MongoDB* mongoDb = MongoDB::getInstance();
+            nlohmann::json games = mongoDb->getGames();
+            std::string response = games.dump(4); //Converte il JSON in una stringa formattata con indentazione
             serverSocket.sendMessage(response.c_str(), clientSocket);
         }
         catch (const std::exception& e) {

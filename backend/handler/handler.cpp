@@ -3,7 +3,12 @@
 #include <sstream>
 
 //TODO: Testare connessioni con MongoDB.cpp
+//TODO: Implementare delete
+// TODO: implementare update
+// TODO: imoplementare array buy in users e in games
+// TODO Sistemare exception handling
 //TODO: Implementare la logica del jwt Token
+// TODO: Implemendare sistema di raccomandazioni
 
 namespace handler {
 
@@ -259,14 +264,26 @@ namespace handler {
 
     void handleAddReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_id;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_id, '/')) {
+        std::string username, game_title, num_copies_str;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, num_copies_str, '/')) {
             try {
-                //addReservation(username, game_id);
+                int num_copies = std::stoi(num_copies_str);
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->addReservation(username, game_title, num_copies);
                 const char* response = "Reservation added successfully";
                 serverSocket.sendMessage(response, clientSocket);
             }
-            catch (const std::exception& e) {
+            catch (const UserNotFoundException& e) {
+                std::string error = "Add reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const GetGameException& e) {
+                std::string error = "Add reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const CreateReservationException e) {
                 std::string error = "Add reservation failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
@@ -281,14 +298,20 @@ namespace handler {
 
     void handleGetReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string reservation_id;
-        if (std::getline(iss, reservation_id, '/')) {
+        std::string username;
+        if (std::getline(iss, username, '/')) {
             try {
-                //bsoncxx::document::value reservation = getReservation(reservation_id);
-                std::string response = "Reservation details:";  // Convert reservation to string
+                MongoDB* mongoDb = MongoDB::getInstance();
+                nlohmann::json review = mongoDb->getReservations(username);
+                std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
-            catch (const std::exception& e) {
+            catch (const UserNotFoundException& e) {
+                std::string error = "Get reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const CreateReservationException& e) {
                 std::string error = "Get reservation failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
@@ -318,6 +341,90 @@ namespace handler {
         }
         else {
             const char* response = "Invalid get recommendations format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleDeleteUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username;
+        if (std::getline(iss, username, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->deleteUser(username);
+                const char* response = "User deleted successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (const UserNotFoundException& e) {
+                std::string error = "Delete User failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Delete User failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid delete user format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleDeleteGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string game_title;
+        if (std::getline(iss, game_title, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->deleteGame(game_title);
+                const char* response = "game deleted successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (GetGameException& e) {
+                std::string error = "Delete Game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Delete game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid delete game format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleDeleteReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, game_title;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->deleteReservation(username, game_title);
+                const char* response = "game deleted successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (GetGameException& e) {
+                std::string error = "Delete Game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Delete game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid delete game format";
             serverSocket.sendMessage(response, clientSocket);
             return;
         }
@@ -374,14 +481,29 @@ namespace handler {
                         handleAddReview(message.substr(10), serverSocket, clientSocket);
                     }
                     else if (message.rfind("addReservation/", 0) == 0) {
-                        handleAddReservation(message.substr(14), serverSocket, clientSocket);
+                        handleAddReservation(message.substr(15), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getReservation/", 0) == 0) {
-                        handleGetReservation(message.substr(14), serverSocket, clientSocket);
+                    else if (message.rfind("getReservations/", 0) == 0) {
+                        handleGetReservation(message.substr(16), serverSocket, clientSocket);
                     }
                     else if (message.rfind("getRecommendations/", 0) == 0) {
                         handleGetRecommendations(message.substr(19), serverSocket, clientSocket);
                     }
+                    else if (message.rfind("deleteUser/", 0) == 0) {
+                        handleDeleteUser(message.substr(11), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("deleteGame/", 0) == 0) {
+                        handleDeleteGame(message.substr(11), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("deleteReservation/", 0) == 0) {
+                        handleDeleteReservation(message.substr(18), serverSocket, clientSocket);
+                    }/*
+                    else if (message.rfind("deleteReview/", 0) == 0) {
+                        handleDeleteReview(message.substr(13), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("deleteRecommendation/", 0) == 0) {
+                        handleDeleteRecommendation(message.substr(20), serverSocket, clientSocket);
+                    }*/
                     else if (message == "exit") {
                         const char* response = "Goodbye!";
                         if (!serverSocket.sendMessage(response, clientSocket)) {

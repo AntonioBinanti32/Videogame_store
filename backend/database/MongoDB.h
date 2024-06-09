@@ -16,6 +16,7 @@
 #include "../exceptions/GetRecommendationsException.h"
 #include "../exceptions/UserNotFoundException.h"
 #include "../exceptions/ReviewException.h"
+#include "../exceptions/ReservationException.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <vector>
@@ -52,8 +53,8 @@ public:
     nlohmann::json MongoDB::getReviewByUser(const std::string& username);
     nlohmann::json MongoDB::getReviewByGame(const std::string& game_title);
     void addReview(const std::string& username, const std::string& game_title, const std::string& review_text, int rating);
-    void addReservation(const std::string& username, const std::string& game_id);
-    bsoncxx::document::value getReservation(const std::string& reservation_id);
+    void addReservation(const std::string& username, const std::string& game_id, int num_copies);
+    nlohmann::json getReservations(const std::string& reservation_id);
     std::vector<bsoncxx::document::value> getRecommendations(const std::string& username);
     std::chrono::system_clock::time_point convertToDate(const std::string& date);
    //TODO: Implementare funzioni update
@@ -62,6 +63,9 @@ public:
     //void updateRecommendation(const std::string& username, const std::vector<std::string>& new_recommendations);
     //void updateReview(const std::string& review_id, const std::string& new_text, int new_rating);
     //void updateReservation(const std::string& reservation_id, const std::string& new_game_id);
+    void deleteUser(const std::string& username);
+    void deleteGame(const std::string& game_title);
+    void deleteReservation(const std::string& username, const std::string& game_title);
 };
 
 

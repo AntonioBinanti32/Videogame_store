@@ -2,11 +2,7 @@
 #include <iostream>
 #include <sstream>
 
-//TODO: Testare connessioni con MongoDB.cpp
-//TODO: Implementare delete
-// TODO: implementare update
 // TODO: imoplementare array buy in users e in games
-// TODO Sistemare exception handling
 //TODO: Implementare la logica del jwt Token
 // TODO: Implemendare sistema di raccomandazioni
 
@@ -23,6 +19,11 @@ namespace handler {
                 serverSocket.sendMessage(response, clientSocket);
             }
             catch (const LoginException& e) {
+                std::string error = "Login failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
                 std::string error = "Login failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
@@ -47,6 +48,11 @@ namespace handler {
                 serverSocket.sendMessage(response, clientSocket);
             }
             catch (const SignupException& e) {
+                std::string error = "Signup failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
                 std::string error = "Signup failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
@@ -167,6 +173,11 @@ namespace handler {
                 std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
+            catch (const ReviewException& e) {
+                std::string error = "Get review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
             catch (const std::exception& e) {
                 std::string error = "Get review failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
@@ -249,6 +260,16 @@ namespace handler {
                 const char* response = "Review added successfully";
                 serverSocket.sendMessage(response, clientSocket);
             }
+            catch (const UserNotFoundException& e) {
+                std::string error = "Add review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const GetGameException& e) {
+                std::string error = "Add review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
             catch (const CreateReviewException& e) {
                 std::string error = "Add review failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
@@ -311,7 +332,7 @@ namespace handler {
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
-            catch (const CreateReservationException& e) {
+            catch (const ReservationException& e) {
                 std::string error = "Get reservation failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
@@ -324,6 +345,8 @@ namespace handler {
         }
     }
 
+    //TODO: Implementare handleGetRecommendations
+    /*
     void handleGetRecommendations(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username;
@@ -341,6 +364,148 @@ namespace handler {
         }
         else {
             const char* response = "Invalid get recommendations format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }*/
+
+    void handleUpdateUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, password, imageUrl;
+        if (std::getline(iss, username, '/') && std::getline(iss, password, '/') && std::getline(iss, imageUrl, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->updateUser(username, password, imageUrl);
+                const char* response = "User modified successful";
+                //TODO: Ritornare jwt
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (const UserNotFoundException& e) {
+                std::string error = "Modify user failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const HandlerException& e) {
+                std::string error = "Modify user failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Modify user failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid Modify user format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleUpdateGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl;
+        if (std::getline(iss, title, '/') && std::getline(iss, genre, '/') && std::getline(iss, release_date, '/') &&
+            std::getline(iss, developer, '/') && std::getline(iss, price_str, '/') && std::getline(iss, stock_str, '/') &&
+            std::getline(iss, description, '/') && std::getline(iss, imageUrl, '/')) {
+
+            try {
+                double price = std::stod(price_str);
+                int stock = std::stoi(stock_str);
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->updateGame(title, genre, release_date, developer, price, stock, description, imageUrl);
+                const char* response = "Game updated successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (const GetGameException& e) {
+                std::string error = "Update game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const HandlerException& e) {
+                std::string error = "Update game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Update game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid update game format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleUpdateReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, game_title, newNumCopies_str;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/')) {
+            try {
+                int newNumCopies = std::stoi(newNumCopies_str);
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->updateReservation(username, game_title, newNumCopies);
+                const char* response = "Reservation updated successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (const ReservationException& e) {
+                std::string error = "Update reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const mongocxx::exception& e) {
+                std::string error = "Update reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Update reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid update reservation format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleUpdateReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, game_title, newReviewText, newRating_str;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
+            std::getline(iss, newReviewText, '/') && std::getline(iss, newRating_str, '/')) {
+
+            try {
+                int newRating = std::stoi(newRating_str);
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->updateReview(username, game_title, newReviewText, newRating);
+                const char* response = "Review updated successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (const ReviewException& e) {
+                std::string error = "Update review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const mongocxx::exception& e) {
+                std::string error = "Update review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Update review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid update review format";
             serverSocket.sendMessage(response, clientSocket);
             return;
         }
@@ -409,26 +574,104 @@ namespace handler {
             try {
                 MongoDB* mongoDb = MongoDB::getInstance();
                 mongoDb->deleteReservation(username, game_title);
-                const char* response = "game deleted successfully";
+                const char* response = "reservation deleted successfully";
                 serverSocket.sendMessage(response, clientSocket);
             }
             catch (GetGameException& e) {
-                std::string error = "Delete Game failed: " + std::string(e.what());
+                std::string error = "Delete reservation failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Delete game failed: " + std::string(e.what());
+                std::string error = "Delete reservation failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid delete game format";
+            const char* response = "Invalid delete reservation format";
             serverSocket.sendMessage(response, clientSocket);
             return;
         }
     }
+
+    void handleDeleteReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, game_title;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->deleteReview(username, game_title);
+                const char* response = "review deleted successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (UserNotFoundException& e) {
+                std::string error = "Delete reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (GetGameException& e) {
+                std::string error = "Delete reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (ReviewException& e) {
+                std::string error = "Delete reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Delete review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid delete review format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    //TODO: Da implementare handleDeleteRecommendation
+    /*
+    void handleDeleteRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, game_title;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                mongoDb->deleteReview(username, game_title);
+                const char* response = "review deleted successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (UserNotFoundException& e) {
+                std::string error = "Delete reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (GetGameException& e) {
+                std::string error = "Delete reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (ReviewException& e) {
+                std::string error = "Delete reservation failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Delete review failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid delete review format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }*/
 
 
     void handleClient(SocketTcp& serverSocket, SOCKET clientSocket) {
@@ -485,10 +728,25 @@ namespace handler {
                     }
                     else if (message.rfind("getReservations/", 0) == 0) {
                         handleGetReservation(message.substr(16), serverSocket, clientSocket);
-                    }
+                    }/*
                     else if (message.rfind("getRecommendations/", 0) == 0) {
                         handleGetRecommendations(message.substr(19), serverSocket, clientSocket);
+                    }*/
+                    else if (message.rfind("updateUser/", 0) == 0) {
+                        handleUpdateUser(message.substr(11), serverSocket, clientSocket);
                     }
+                    else if (message.rfind("updateGame/", 0) == 0) {
+                        handleUpdateGame(message.substr(11), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("updateReservation/", 0) == 0) {
+                        handleUpdateReservation(message.substr(18), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("updateReview/", 0) == 0) {
+                        handleUpdateReview(message.substr(13), serverSocket, clientSocket);
+                    }/*
+                    else if (message.rfind("updateRecommendation/", 0) == 0) {
+                        handleUpdateRecommendation(message.substr(20), serverSocket, clientSocket);
+                    }*/
                     else if (message.rfind("deleteUser/", 0) == 0) {
                         handleDeleteUser(message.substr(11), serverSocket, clientSocket);
                     }
@@ -497,10 +755,10 @@ namespace handler {
                     }
                     else if (message.rfind("deleteReservation/", 0) == 0) {
                         handleDeleteReservation(message.substr(18), serverSocket, clientSocket);
-                    }/*
+                    }
                     else if (message.rfind("deleteReview/", 0) == 0) {
                         handleDeleteReview(message.substr(13), serverSocket, clientSocket);
-                    }
+                    }/*
                     else if (message.rfind("deleteRecommendation/", 0) == 0) {
                         handleDeleteRecommendation(message.substr(20), serverSocket, clientSocket);
                     }*/
@@ -520,12 +778,12 @@ namespace handler {
                     memset(recvbuf, 0, recvbuflen);
                 }
                 else {
-                    // Gestisco la disconnessione del client
+                    // Gestione la disconnessione del client
                     std::cerr << "Client disconnected." << std::endl;
                     clientConnected = false;
                 }
             }
-            // Chiudo la connessione e pulisci le risorse
+            // Chiusura della connessione e pulizia delle risorse
             closesocket(clientSocket);
         }
         else {

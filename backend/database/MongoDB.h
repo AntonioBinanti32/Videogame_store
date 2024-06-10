@@ -17,6 +17,7 @@
 #include "../exceptions/UserNotFoundException.h"
 #include "../exceptions/ReviewException.h"
 #include "../exceptions/ReservationException.h"
+#include "../exceptions/HandlerException.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <vector>
@@ -58,14 +59,15 @@ public:
     std::vector<bsoncxx::document::value> getRecommendations(const std::string& username);
     std::chrono::system_clock::time_point convertToDate(const std::string& date);
    //TODO: Implementare funzioni update
-    //void updateUser(const std::string& username, const std::string& new_password, const std::string& new_imageUrl);
-    //void updateGame(const std::string& game_id, const std::string& new_title, const std::string& new_genre, const std::string& new_release_date, const std::string& new_developer, double new_price, int new_stock, const std::string& new_description, const std::string& new_imageUrl);
+    void updateUser(const std::string& username, const std::string& new_password, const std::string& new_imageUrl);
+    void updateGame(const std::string& title, const std::string& newGenre, const std::string& newReleaseDate, const std::string& newDeveloper, double newPrice, int newStock, const std::string& newDescription, const std::string& newImageUrl);
     //void updateRecommendation(const std::string& username, const std::vector<std::string>& new_recommendations);
-    //void updateReview(const std::string& review_id, const std::string& new_text, int new_rating);
-    //void updateReservation(const std::string& reservation_id, const std::string& new_game_id);
+    void updateReview(const std::string& username, const std::string& game_title, const std::string& newReviewText, int newRating);
+    void updateReservation(const std::string& username, const std::string& game_title, int newNumCopies);
     void deleteUser(const std::string& username);
     void deleteGame(const std::string& game_title);
     void deleteReservation(const std::string& username, const std::string& game_title);
+    void deleteReview(const std::string& username, const std::string& game_title);
 };
 
 

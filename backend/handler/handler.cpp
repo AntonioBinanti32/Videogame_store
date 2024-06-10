@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 
-// TODO: imoplementare array buy in users e in games
+// TODO: imoplementare purchases handlers
 //TODO: Implementare la logica del jwt Token
 // TODO: Implemendare sistema di raccomandazioni
 
@@ -317,6 +317,47 @@ namespace handler {
         }
     }
 
+    void handleAddPurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, game_title, num_copies_str;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, num_copies_str, '/')) {
+            try {
+                int num_copies = std::stoi(num_copies_str);
+                MongoDB* mongoDb = MongoDB::getInstance();
+                // Verifica se il gioco è disponibile per l'acquisto
+                if (!isGameAvailableForPurchase(game_title, num_copies)) {
+                    throw PurchaseException("Not enough copies available for purchase");
+                }
+                // Effettua l'acquisto
+                mongoDb->addPurchase(username, game_title, num_copies);
+                // Rimuove le prenotazioni se l'utente ha già prenotato questo gioco
+                removeReservationsForGame(username, game_title, num_copies);
+                const char* response = "Purchase added successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (const UserNotFoundException& e) {
+                std::string error = "Add purchase failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const GetGameException& e) {
+                std::string error = "Add purchase failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const PurchaseException& e) {
+                std::string error = "Add purchase failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid add purchase format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
     void handleGetReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username;
@@ -340,6 +381,34 @@ namespace handler {
         }
         else {
             const char* response = "Invalid get reservation format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+    void handleGetPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username;
+        if (std::getline(iss, username, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                nlohmann::json purchases = mongoDb->getPurchases(username);
+                std::string response = purchases.dump(4);
+                serverSocket.sendMessage(response.c_str(), clientSocket);
+            }
+            catch (const UserNotFoundException& e) {
+                std::string error = "Get purchases failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const PurchaseException& e) {
+                std::string error = "Get purchases failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid get purchases format";
             serverSocket.sendMessage(response, clientSocket);
             return;
         }
@@ -475,6 +544,47 @@ namespace handler {
         }
     }
 
+    void handleUpdatePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, game_title, newNumCopies_str;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/')) {
+            try {
+                int newNumCopies = std::stoi(newNumCopies_str);
+                MongoDB* mongoDb = MongoDB::getInstance();
+                // Verifica se il gioco è disponibile per l'acquisto
+                // Altrimenti, solleva un'eccezione PurchaseException
+                if (!isGameAvailableForPurchase(game_title, newNumCopies)) {
+                    throw PurchaseException("Not enough copies available for purchase");
+                }
+                // Aggiorna l'acquisto
+                mongoDb->updatePurchase(username, game_title, newNumCopies);
+                const char* response = "Purchase updated successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (const ReservationException& e) {
+                std::string error = "Update purchase failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const mongocxx::exception& e) {
+                std::string error = "Update purchase failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Update purchase failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid update purchase format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
+
     void handleUpdateReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, newReviewText, newRating_str;
@@ -595,6 +705,35 @@ namespace handler {
         }
     }
 
+    void handleDeletePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, game_title;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                // Elimina l'acquisto
+                mongoDb->deletePurchase(username, game_title);
+                const char* response = "Purchase deleted successfully";
+                serverSocket.sendMessage(response, clientSocket);
+            }
+            catch (GetGameException& e) {
+                std::string error = "Delete purchase failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = "Delete purchase failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            const char* response = "Invalid delete purchase format";
+            serverSocket.sendMessage(response, clientSocket);
+            return;
+        }
+    }
+
     void handleDeleteReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title;
@@ -673,6 +812,43 @@ namespace handler {
         }
     }*/
 
+    //TODO
+    bool isGameAvailableForPurchase(const std::string& game_title, int num_copies_to_purchase) {
+        MongoDB* mongoDb = MongoDB::getInstance();
+        // Recupera il numero di copie disponibili per il gioco specificato
+        nlohmann::json game = mongoDb->getGameByTitle(game_title);
+        int stock = game["stock"].get<int>();
+        if (stock >= num_copies_to_purchase) {
+            int stock_new = stock - num_copies_to_purchase;
+            mongoDb->updateGame(game_title, "", "", "", -1, stock_new, "", "");
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    bool removeReservationsForGame(const std::string&  username, const std::string& game_title, int num_copies_purchased) {
+        int reserved = 0;
+        MongoDB* mongoDb = MongoDB::getInstance();
+        // Recupera il numero di copie prenotate per il gioco specificato
+        nlohmann::json reservations = mongoDb->getReservations(username);
+        for (const auto& reservation : reservations) {
+            if (reservation["game_title"] == game_title) {
+                reserved += reservation["num_copies"].get<int>();
+            }
+        }
+        if (reserved < num_copies_purchased) {
+            mongoDb->deleteReservation(username, game_title);
+        }
+        else {
+            int reserved_new = reserved - num_copies_purchased;
+            mongoDb->updateReservation(username, game_title, reserved_new);
+        }
+        return true;
+    }
+
+
 
     void handleClient(SocketTcp& serverSocket, SOCKET clientSocket) {
         char recvbuf[512];
@@ -726,9 +902,16 @@ namespace handler {
                     else if (message.rfind("addReservation/", 0) == 0) {
                         handleAddReservation(message.substr(15), serverSocket, clientSocket);
                     }
+                    else if (message.rfind("addPurchase/", 0) == 0) {
+                        handleAddPurchase(message.substr(12), serverSocket, clientSocket);
+                    }
                     else if (message.rfind("getReservations/", 0) == 0) {
                         handleGetReservation(message.substr(16), serverSocket, clientSocket);
-                    }/*
+                    }
+                    else if (message.rfind("getPurchases/", 0) == 0) {
+                        handleGetPurchases(message.substr(13), serverSocket, clientSocket);
+                    }
+                    /*
                     else if (message.rfind("getRecommendations/", 0) == 0) {
                         handleGetRecommendations(message.substr(19), serverSocket, clientSocket);
                     }*/
@@ -740,6 +923,9 @@ namespace handler {
                     }
                     else if (message.rfind("updateReservation/", 0) == 0) {
                         handleUpdateReservation(message.substr(18), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("updatePurchase/", 0) == 0) {
+                        handleUpdatePurchase(message.substr(15), serverSocket, clientSocket);
                     }
                     else if (message.rfind("updateReview/", 0) == 0) {
                         handleUpdateReview(message.substr(13), serverSocket, clientSocket);
@@ -755,6 +941,9 @@ namespace handler {
                     }
                     else if (message.rfind("deleteReservation/", 0) == 0) {
                         handleDeleteReservation(message.substr(18), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("deletePurchase/", 0) == 0) {
+                        handleDeletePurchase(message.substr(15), serverSocket, clientSocket);
                     }
                     else if (message.rfind("deleteReview/", 0) == 0) {
                         handleDeleteReview(message.substr(13), serverSocket, clientSocket);

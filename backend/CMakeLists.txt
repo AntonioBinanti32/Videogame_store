@@ -10,7 +10,7 @@ add_executable(Videogame_store "main.cpp"
 "database/MongoDB.h" "database/MongoDB.cpp"
 "handler/Handler.h" "handler/Handler.cpp" 
 "exceptions/SignupException.h" "exceptions/LoginException.h" "exceptions/CreateGameException.h" "exceptions/GetGameException.h" "exceptions/UserNotFoundException.h" "exceptions/CreateReservationException.h" "exceptions/GetRecommendationsException.h" "exceptions/SocketException.h" "exceptions/ReviewException.h" "exceptions/ReservationException.h"
-"socketTcp/SocketTcp.h" "socketTcp/SocketTcp.cpp" "exceptions/ReviewException.h" "exceptions/ReservationException.h")
+"socketTcp/SocketTcp.h" "socketTcp/SocketTcp.cpp" "exceptions/ReviewException.h" "exceptions/ReservationException.h" "exceptions/PurchaseException.h")
 
 find_package(bsoncxx CONFIG REQUIRED)
 #se esiste una versione statica della libreria mongocxx (mongo::mongocxx_static) la collega. Altrimenti, collega la versione condivisa (mongo::mongocxx_shared).

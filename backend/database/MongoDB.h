@@ -18,6 +18,7 @@
 #include "../exceptions/ReviewException.h"
 #include "../exceptions/ReservationException.h"
 #include "../exceptions/HandlerException.h"
+#include "../exceptions/PurchaseException.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <vector>
@@ -36,6 +37,7 @@ private:
     mongocxx::collection gameCollection;
     mongocxx::collection reservationCollection;
     mongocxx::collection recommendationCollection;
+    mongocxx::collection purchaseCollection;
 
     static MongoDB* INSTANCE;
 
@@ -55,8 +57,10 @@ public:
     nlohmann::json MongoDB::getReviewByGame(const std::string& game_title);
     void addReview(const std::string& username, const std::string& game_title, const std::string& review_text, int rating);
     void addReservation(const std::string& username, const std::string& game_id, int num_copies);
-    nlohmann::json getReservations(const std::string& reservation_id);
-    std::vector<bsoncxx::document::value> getRecommendations(const std::string& username);
+    void addPurchase(const std::string& username, const std::string& game_title, int num_copies);
+    nlohmann::json getReservations(const std::string& username);
+    nlohmann::json getPurchases(const std::string& username);
+    //TODO: std::vector<bsoncxx::document::value> getRecommendations(const std::string& username);
     std::chrono::system_clock::time_point convertToDate(const std::string& date);
    //TODO: Implementare funzioni update
     void updateUser(const std::string& username, const std::string& new_password, const std::string& new_imageUrl);
@@ -64,9 +68,11 @@ public:
     //void updateRecommendation(const std::string& username, const std::vector<std::string>& new_recommendations);
     void updateReview(const std::string& username, const std::string& game_title, const std::string& newReviewText, int newRating);
     void updateReservation(const std::string& username, const std::string& game_title, int newNumCopies);
+    void updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies);
     void deleteUser(const std::string& username);
     void deleteGame(const std::string& game_title);
     void deleteReservation(const std::string& username, const std::string& game_title);
+    void deletePurchase(const std::string& username, const std::string& game_title);
     void deleteReview(const std::string& username, const std::string& game_title);
 };
 

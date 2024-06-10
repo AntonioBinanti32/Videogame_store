@@ -28,6 +28,7 @@ void MongoDB::connectDB(const std::string& hostname, const std::string& port, co
         userCollection = database["users"];
         gameCollection = database["games"];
         reservationCollection = database["reservations"];
+        purchaseCollection = database["purchases"];
         recommendationCollection = database["recommendations"];
     }
     catch (std::exception& e) {
@@ -315,7 +316,7 @@ void MongoDB::addReservation(const std::string& username, const std::string& gam
         auto result = userCollection.find_one(query.view());
 
         if (result) {
-            throw CreateReservationException("Il gioco e' gia' stato recensito da questo utente");
+            throw CreateReservationException("Il gioco e' gia' stato prenotato da questo utente");
         }
 
         bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> reservation_doc = bsoncxx::builder::basic::make_document(
@@ -342,6 +343,43 @@ void MongoDB::addReservation(const std::string& username, const std::string& gam
     }
     catch (std::exception& e) {
         throw CreateReservationException("Errore durante l'aggiunta della prenotazione");
+    }
+}
+
+void MongoDB::addPurchase(const std::string& username, const std::string& game_title, int num_copies) {
+    try {
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("User not found");
+        }
+        auto user_id = (*user_doc)["_id"].get_oid().value;
+
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", game_title)));
+        if (!game_doc) {
+            throw GetGameException("Game not found");
+        }
+
+        bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> purchase_doc = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("game_title", game_title),
+            bsoncxx::builder::basic::kvp("num_copies", num_copies),
+            bsoncxx::builder::basic::kvp("purchase_date", bsoncxx::types::b_date(std::chrono::system_clock::now()))
+        );
+        purchaseCollection.insert_one(purchase_doc);
+
+        userCollection.update_one(
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$push", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("purchases", purchase_doc))))
+        );
+    }
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (GetGameException& e) {
+        throw;
+    }
+    catch (std::exception& e) {
+        throw PurchaseException("Error adding purchase");
     }
 }
 
@@ -372,6 +410,33 @@ nlohmann::json MongoDB::getReservations(const std::string& username) {
     }
 }
 
+nlohmann::json MongoDB::getPurchases(const std::string& username) {
+    try {
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("User not found");
+        }
+        auto user_id = (*user_doc)["_id"].get_oid().value;
+
+        auto cursor = purchaseCollection.find(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+
+        nlohmann::json purchases_json;
+
+        for (const auto& doc : cursor) {
+            purchases_json.push_back(nlohmann::json::parse(bsoncxx::to_json(doc)));
+        }
+
+        return purchases_json;
+    }
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (std::exception& e) {
+        throw PurchaseException("Error retrieving purchases");
+    }
+}
+
+/*TODO: 
 // Ottenimento delle raccomandazioni per un utente
 std::vector<bsoncxx::document::value> MongoDB::getRecommendations(const std::string& username) {
     try {
@@ -394,7 +459,7 @@ std::vector<bsoncxx::document::value> MongoDB::getRecommendations(const std::str
     catch (std::exception& e) {
         throw GetRecommendationsException("Errore durante il recupero delle raccomandazioni");
     }
-}
+}*/
 
 // Funzione helper per convertire stringa a ISODate
 std::chrono::system_clock::time_point MongoDB::convertToDate(const std::string& date) {
@@ -605,6 +670,56 @@ void MongoDB::updateReservation(const std::string& username, const std::string& 
     }
 }
 
+void MongoDB::updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies) noexcept(false) {
+    try {
+        auto query = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("purchases.game_title", game_title)
+        );
+
+        auto user_doc = userCollection.find_one(query.view());
+        if (!user_doc) {
+            throw PurchaseException("Purchase not found for user");
+        }
+
+        bsoncxx::builder::basic::document update_builder{};
+        update_builder.append(bsoncxx::builder::basic::kvp("purchases.$.num_copies", newNumCopies));
+
+        auto result = userCollection.update_one(
+            query.view(),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", update_builder.extract()))
+        );
+
+        if (!result || result->modified_count() == 0) {
+            throw PurchaseException("No modifications made to purchase");
+        }
+
+        auto update_res = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("game_title", game_title)
+        );
+
+        auto update_result = purchaseCollection.update_one(
+            update_res.view(),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("num_copies", newNumCopies))))
+        );
+
+        if (!update_result || update_result->modified_count() == 0) {
+            throw PurchaseException("No modifications made to purchase in the purchases collection");
+        }
+    }
+    catch (const PurchaseException& e) {
+        throw;
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
+    }
+}
+
+
 
 //TODO: Sistemare funzione
 // Aggiornamento di una raccomandazione
@@ -720,6 +835,47 @@ void MongoDB::deleteReservation(const std::string& username, const std::string& 
                 bsoncxx::builder::basic::kvp("$pull",
                     bsoncxx::builder::basic::make_document(
                         bsoncxx::builder::basic::kvp("reservations", bsoncxx::builder::basic::make_document(
+                            bsoncxx::builder::basic::kvp("game_title", game_title)
+                        ))
+                    )
+                )
+            )
+        );
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
+    }
+}
+
+void MongoDB::deletePurchase(const std::string& username, const std::string& game_title) noexcept(false) {
+    try {
+        auto filter = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("game_title", game_title)
+        );
+
+        auto result = purchaseCollection.delete_one(filter.view());
+
+        if (result) {
+            if (result->deleted_count() == 0) {
+                throw PurchaseException("Purchase not found");
+            }
+        }
+        else {
+            throw PurchaseException("Error deleting purchase");
+        }
+
+        userCollection.update_one(
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("username", username)
+            ),
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("$pull",
+                    bsoncxx::builder::basic::make_document(
+                        bsoncxx::builder::basic::kvp("purchases", bsoncxx::builder::basic::make_document(
                             bsoncxx::builder::basic::kvp("game_title", game_title)
                         ))
                     )

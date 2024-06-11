@@ -2,8 +2,8 @@
 #include <iostream>
 #include <sstream>
 
-//TODO: Implementare Token nelle funzioni
 // TODO: Implemendare sistema di raccomandazioni
+// TODO: Inserire admin nella verifica token delle funzioni di gestione importanti
 
 namespace handler {
 
@@ -69,7 +69,7 @@ namespace handler {
             return;
         }
     }
-    //TODO: Verificare se funziona l'utilizzo del token addGame/test game/genre/2024-06-11/me/100.0/20/description//a/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxMTA3OTcsInVzZXJuYW1lIjoiYSJ9.ZaijMPZiDcHvCgq3C2-0k06JasjlyUyEi6cEf3V8zf8
+
     void handleAddGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actualUser, token;
@@ -82,7 +82,7 @@ namespace handler {
                 double price = std::stod(price_str);
                 int stock = std::stoi(stock_str);
                 if (imageUrl.empty()) {
-                    imageUrl = "https://example.com/default_image.png"; //TODO: Cambiare immagine facoltativa
+                    imageUrl = "https://example.com/default_image.png";
                 }
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -113,327 +113,519 @@ namespace handler {
             }
         }
         else {
-            const char* response = "Invalid add game format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid add game format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
-
+    
     void handleGetGames(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
-        try {
-            MongoDB* mongoDb = MongoDB::getInstance();
-            nlohmann::json games = mongoDb->getGames();
-            std::string response = games.dump(4); //Converte il JSON in una stringa formattata con indentazione
+        std::istringstream iss(message);
+        std::string actualUser, token;
+        if (std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+            try {
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json games = mongoDb->getGames();
+                    std::string response = generateJson("", games.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
+            }
+            catch (const GetGameException& e) {
+                std::string error = generateJson("", "Get games failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get games failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get games failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            std::string response = generateJson("", "Invalid get games format");
             serverSocket.sendMessage(response.c_str(), clientSocket);
-        }
-        catch (const GetGameException& e) {
-            std::string error = "Get games failed: " + std::string(e.what());
-            serverSocket.sendMessage(error.c_str(), clientSocket);
-            return;
-        }
-        catch (const std::exception& e) {
-            std::string error = "Get games failed: " + std::string(e.what());
-            serverSocket.sendMessage(error.c_str(), clientSocket);
             return;
         }
     }
 
     void handleGetGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string game_id;
-        if (std::getline(iss, game_id, '/')) {
+        std::string game_id, actualUser, token;
+        if (std::getline(iss, game_id, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                nlohmann::json games = mongoDb->getGame(game_id);
-                std::string response = games.dump(4); //Converte il JSON in una stringa formattata con indentazione
-                serverSocket.sendMessage(response.c_str(), clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json game = mongoDb->getGame(game_id);
+                    std::string response = generateJson("", game.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const GetGameException& e) {
-                std::string error = "Get game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid get game format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid get game format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleGetGameByTitle(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string title;
-        if (std::getline(iss, title, '/')) {
+        std::string title, actualUser, token;
+        if (std::getline(iss, title, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                nlohmann::json games = mongoDb->getGameByTitle(title);
-                std::string response = games.dump(4); //Converte il JSON in una stringa formattata con indentazione
-                serverSocket.sendMessage(response.c_str(), clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json games = mongoDb->getGameByTitle(title);
+                    std::string response = generateJson("", games.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const GetGameException& e) {
-                std::string error = "Get game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid get game format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid get game format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleGetReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string review_id;
-        if (std::getline(iss, review_id, '/')) {
+        std::string review_id, actualUser, token;
+        if (std::getline(iss, review_id, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                nlohmann::json review = mongoDb->getReview(review_id);
-                std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
-                serverSocket.sendMessage(response.c_str(), clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json review = mongoDb->getReview(review_id);
+                    std::string response = generateJson("", review.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const ReviewException& e) {
-                std::string error = "Get review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Get review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid get review format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid get review format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleGetReviewByUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string user;
-        if (std::getline(iss, user, '/')) {
+        std::string user, actualUser, token;
+        if (std::getline(iss, user, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                nlohmann::json review = mongoDb->getReviewByUser(user);
-                std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
-                serverSocket.sendMessage(response.c_str(), clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json review = mongoDb->getReviewByUser(user);
+                    std::string response = generateJson("", review.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const ReviewException& e) {
-                std::string error = "Get review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const UserNotFoundException& e) {
-                std::string error = "Get review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid get review format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid get review format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleGetReviewByGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string game_title;
-        if (std::getline(iss, game_title, '/')) {
+        std::string game_title, actualUser, token;
+        if (std::getline(iss, game_title, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                nlohmann::json review = mongoDb->getReviewByGame(game_title);
-                std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
-                serverSocket.sendMessage(response.c_str(), clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json review = mongoDb->getReviewByGame(game_title);
+                    std::string response = generateJson("", review.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const ReviewException& e) {
-                std::string error = "Get review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const GetGameException& e) {
-                std::string error = "Get review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid get review format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid get review format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleAddReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, review_text, rating_str;
+        std::string username, game_title, review_text, rating_str, actualUser, token;
         if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
-            std::getline(iss, review_text, '/') && std::getline(iss, rating_str, '/')) {
+            std::getline(iss, review_text, '/') && std::getline(iss, rating_str, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
 
             try {
                 int rating = std::stoi(rating_str);
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->addReview(username, game_title, review_text, rating);
-                const char* response = "Review added successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->addReview(username, game_title, review_text, rating);
+                    std::string response = generateJson("", "Review added successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = "Add review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const GetGameException& e) {
-                std::string error = "Add review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const CreateReviewException& e) {
-                std::string error = "Add review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid add review format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid add review format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleAddReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, num_copies_str;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, num_copies_str, '/')) {
+        std::string username, game_title, num_copies_str, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, num_copies_str, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
                 int num_copies = std::stoi(num_copies_str);
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->addReservation(username, game_title, num_copies);
-                const char* response = "Reservation added successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->addReservation(username, game_title, num_copies);
+                    std::string response = generateJson("", "Reservation added successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = "Add reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const GetGameException& e) {
-                std::string error = "Add reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
-            catch (const CreateReservationException e) {
-                std::string error = "Add reservation failed: " + std::string(e.what());
+            catch (const CreateReservationException& e) {
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid add reservation format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid add reservation format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
+    //
+
     void handleAddPurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, num_copies_str;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, num_copies_str, '/')) {
+        std::string username, game_title, num_copies_str, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, num_copies_str, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
                 int num_copies = std::stoi(num_copies_str);
-                MongoDB* mongoDb = MongoDB::getInstance();
-                // Verifica se il gioco è disponibile per l'acquisto
-                if (!isGameAvailableForPurchase(game_title, num_copies)) {
-                    throw PurchaseException("Not enough copies available for purchase");
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    // Verifica se il gioco è disponibile per l'acquisto
+                    if (!isGameAvailableForPurchase(game_title, num_copies)) {
+                        throw PurchaseException("Not enough copies available for purchase");
+                    }
+                    // Effettua l'acquisto
+                    mongoDb->addPurchase(username, game_title, num_copies);
+                    // Rimuove le prenotazioni se l'utente ha già prenotato questo gioco
+                    removeReservationsForGame(username, game_title, num_copies);
+                    std::string response = generateJson("", "Purchase added successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
-                // Effettua l'acquisto
-                mongoDb->addPurchase(username, game_title, num_copies);
-                // Rimuove le prenotazioni se l'utente ha già prenotato questo gioco
-                removeReservationsForGame(username, game_title, num_copies);
-                const char* response = "Purchase added successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = "Add purchase failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const GetGameException& e) {
-                std::string error = "Add purchase failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const PurchaseException& e) {
-                std::string error = "Add purchase failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid add purchase format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid add purchase format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleGetReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username;
-        if (std::getline(iss, username, '/')) {
+        std::string username, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                nlohmann::json review = mongoDb->getReservations(username);
-                std::string response = review.dump(4); //Converte il JSON in una stringa formattata con indentazione
-                serverSocket.sendMessage(response.c_str(), clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json reservations = mongoDb->getReservations(username);
+                    std::string response = generateJson("", reservations.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = "Get reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const ReservationException& e) {
-                std::string error = "Get reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid get reservation format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid get reservation format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleGetPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username;
-        if (std::getline(iss, username, '/')) {
+        std::string username, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                nlohmann::json purchases = mongoDb->getPurchases(username);
-                std::string response = purchases.dump(4);
-                serverSocket.sendMessage(response.c_str(), clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json purchases = mongoDb->getPurchases(username);
+                    std::string response = generateJson("", purchases.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = "Get purchases failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const PurchaseException& e) {
-                std::string error = "Get purchases failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid get purchases format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid get purchases format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
+    
 
     //TODO: Implementare handleGetRecommendations
     /*
@@ -461,334 +653,440 @@ namespace handler {
 
     void handleUpdateUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, password, imageUrl;
-        if (std::getline(iss, username, '/') && std::getline(iss, password, '/') && std::getline(iss, imageUrl, '/')) {
+        std::string username, password, imageUrl, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, password, '/') && std::getline(iss, imageUrl, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->updateUser(username, password, imageUrl);
-                const char* response = "User modified successful";
-                //TODO: Ritornare jwt
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->updateUser(username, password, imageUrl);
+                    std::string response = generateJson("", "User modified successful");
+                    // TODO: Return JWT
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = "Modify user failed: " + std::string(e.what());
+                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const HandlerException& e) {
-                std::string error = "Modify user failed: " + std::string(e.what());
+                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Modify user failed: " + std::string(e.what());
+                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid Modify user format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid Modify user format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleUpdateGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl;
+        std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actualUser, token;
         if (std::getline(iss, title, '/') && std::getline(iss, genre, '/') && std::getline(iss, release_date, '/') &&
             std::getline(iss, developer, '/') && std::getline(iss, price_str, '/') && std::getline(iss, stock_str, '/') &&
-            std::getline(iss, description, '/') && std::getline(iss, imageUrl, '/')) {
+            std::getline(iss, description, '/') && std::getline(iss, imageUrl, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
 
             try {
                 double price = std::stod(price_str);
                 int stock = std::stoi(stock_str);
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->updateGame(title, genre, release_date, developer, price, stock, description, imageUrl);
-                const char* response = "Game updated successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->updateGame(title, genre, release_date, developer, price, stock, description, imageUrl);
+                    std::string response = generateJson("", "Game updated successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const GetGameException& e) {
-                std::string error = "Update game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const HandlerException& e) {
-                std::string error = "Update game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update game failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Update game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Update game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid update game format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid update game format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
+
     void handleUpdateReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, newNumCopies_str;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/')) {
+        std::string username, game_title, newNumCopies_str, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                int newNumCopies = std::stoi(newNumCopies_str);
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->updateReservation(username, game_title, newNumCopies);
-                const char* response = "Reservation updated successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    int newNumCopies = std::stoi(newNumCopies_str);
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->updateReservation(username, game_title, newNumCopies);
+                    std::string response = generateJson("", "Reservation updated successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const ReservationException& e) {
-                std::string error = "Update reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const mongocxx::exception& e) {
-                std::string error = "Update reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Update reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid update reservation format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid update reservation format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleUpdatePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, newNumCopies_str, purchase_id;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/') && std::getline(iss, purchase_id, '/')) {
+        std::string username, game_title, newNumCopies_str, purchase_id, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/') &&
+            std::getline(iss, purchase_id, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                int newNumCopies = std::stoi(newNumCopies_str);
-                MongoDB* mongoDb = MongoDB::getInstance();
-                // Verifica se il gioco è disponibile per l'acquisto
-                // Altrimenti, solleva un'eccezione PurchaseException
-                if (!isGameAvailableForPurchase(game_title, newNumCopies)) {
-                    throw PurchaseException("Not enough copies available for purchase");
+                if (verifyToken(token, actualUser)) {
+                    int newNumCopies = std::stoi(newNumCopies_str);
+                    // Verifica se il gioco è disponibile per l'acquisto
+                    // Altrimenti, solleva un'eccezione PurchaseException
+                    if (!isGameAvailableForPurchase(game_title, newNumCopies)) {
+                        throw PurchaseException("Not enough copies available for purchase");
+                    }
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    // Aggiorna l'acquisto
+                    mongoDb->updatePurchase(username, game_title, newNumCopies, purchase_id);
+                    std::string response = generateJson("", "Purchase updated successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
-                // Aggiorna l'acquisto
-                mongoDb->updatePurchase(username, game_title, newNumCopies, purchase_id);
-                const char* response = "Purchase updated successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const ReservationException& e) {
-                std::string error = "Update purchase failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const mongocxx::exception& e) {
-                std::string error = "Update purchase failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Update purchase failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid update purchase format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid update purchase format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
-
     void handleUpdateReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, newReviewText, newRating_str;
+        std::string username, game_title, newReviewText, newRating_str, actualUser, token;
         if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
-            std::getline(iss, newReviewText, '/') && std::getline(iss, newRating_str, '/')) {
+            std::getline(iss, newReviewText, '/') && std::getline(iss, newRating_str, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
 
             try {
-                int newRating = std::stoi(newRating_str);
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->updateReview(username, game_title, newReviewText, newRating);
-                const char* response = "Review updated successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    int newRating = std::stoi(newRating_str);
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->updateReview(username, game_title, newReviewText, newRating);
+                    std::string response = generateJson("", "Review updated successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const ReviewException& e) {
-                std::string error = "Update review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const mongocxx::exception& e) {
-                std::string error = "Update review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update review failed: " + std::string(e.what()));
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Update review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Update review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Update review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid update review format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid update review format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleDeleteUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username;
-        if (std::getline(iss, username, '/')) {
+        std::string username, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->deleteUser(username);
-                const char* response = "User deleted successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->deleteUser(username);
+                    std::string response = generateJson("", "User deleted successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = "Delete User failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete User failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Delete User failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete User failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid delete user format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid delete user format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleDeleteGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string game_title;
-        if (std::getline(iss, game_title, '/')) {
+        std::string game_title, actualUser, token;
+        if (std::getline(iss, game_title, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->deleteGame(game_title);
-                const char* response = "game deleted successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->deleteGame(game_title);
+                    std::string response = generateJson("", "Game deleted successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (GetGameException& e) {
-                std::string error = "Delete Game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete Game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Delete game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid delete game format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid delete game format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleDeleteReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/')) {
+        std::string username, game_title, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->deleteReservation(username, game_title);
-                const char* response = "reservation deleted successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->deleteReservation(username, game_title);
+                    std::string response = generateJson("", "Reservation deleted successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (GetGameException& e) {
-                std::string error = "Delete reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Delete reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete reservation failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid delete reservation format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid delete reservation format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleDeletePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, purchase_id;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, purchase_id, '/')) {
+        std::string username, game_title, purchase_id, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
+            std::getline(iss, purchase_id, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                // Elimina l'acquisto
-                mongoDb->deletePurchase(username, game_title, purchase_id);
-                const char* response = "Purchase deleted successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    // Elimina l'acquisto
+                    mongoDb->deletePurchase(username, game_title, purchase_id);
+                    std::string response = generateJson("", "Purchase deleted successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (GetGameException& e) {
-                std::string error = "Delete purchase failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete purchase failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Delete purchase failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete purchase failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid delete purchase format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid delete purchase format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
 
     void handleDeleteReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/')) {
+        std::string username, game_title, actualUser, token;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
+            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->deleteReview(username, game_title);
-                const char* response = "review deleted successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->deleteReview(username, game_title);
+                    std::string response = generateJson("", "Review deleted successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (UserNotFoundException& e) {
-                std::string error = "Delete reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (GetGameException& e) {
-                std::string error = "Delete reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (ReviewException& e) {
-                std::string error = "Delete reservation failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Delete review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid delete review format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid delete review format");
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
     }
@@ -859,7 +1157,10 @@ namespace handler {
                 reserved += reservation["num_copies"].get<int>();
             }
         }
-        if (reserved < num_copies_purchased) {
+        if (reserved == 0) {
+            return false;
+        }
+        else if (reserved < num_copies_purchased) {
             mongoDb->deleteReservation(username, game_title);
         }
         else {
@@ -880,7 +1181,10 @@ namespace handler {
     std::string generateJson(const std::string& token, const std::string& message) {
         nlohmann::json response;
         response["message"] = message;
-        response["token"] = token;
+        if (token != "") {
+            response["token"] = token;
+        }
+        
         return response.dump();
     }
 
@@ -1011,16 +1315,15 @@ namespace handler {
                         clientConnected = false;
                     }
                     else {
-                        const char* response = "Unknown command";
-                        if (!serverSocket.sendMessage(response, clientSocket)) {
-                            throw HandlerException("Failed to send response.");
-                        }
+                        std::string error = generateJson("", "Unknown command");
+                        serverSocket.sendMessage(error.c_str(), clientSocket);
                     }
                     memset(recvbuf, 0, recvbuflen);
                 }
                 else {
                     // Gestione la disconnessione del client
-                    std::cerr << "Client disconnected." << std::endl;
+                    std::string error = generateJson("", "Client disconnected.");
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
                     clientConnected = false;
                 }
             }

@@ -576,8 +576,15 @@ void MongoDB::updateReview(const std::string& username, const std::string& game_
 
         // Aggiorno la recensione nel documento dell'utente
         bsoncxx::builder::basic::document update_builder{};
-        update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.review_text", newReviewText));
-        update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.rating", newRating));
+        if (!newReviewText.empty()) {
+            update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.review_text", newReviewText));
+        }
+        if (newRating != -1) {
+            update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.rating", newRating));
+        }
+        
+        //update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.review_text", newReviewText));
+        //update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.rating", newRating));
 
         auto result = userCollection.update_one(
             query.view(),
@@ -595,8 +602,12 @@ void MongoDB::updateReview(const std::string& username, const std::string& game_
 
         // Aggiorno la recensione nel documento del gioco
         bsoncxx::builder::basic::document update_builder_game{};
-        update_builder_game.append(bsoncxx::builder::basic::kvp("reviews.$.review_text", newReviewText));
-        update_builder_game.append(bsoncxx::builder::basic::kvp("reviews.$.rating", newRating));
+        if (!newReviewText.empty()) {
+            update_builder_game.append(bsoncxx::builder::basic::kvp("reviews.$.review_text", newReviewText));
+        }
+        if (newRating != -1) {
+            update_builder_game.append(bsoncxx::builder::basic::kvp("reviews.$.rating", newRating));
+        }
 
         auto result2 = gameCollection.update_one(
             query_game.view(),
@@ -673,13 +684,13 @@ void MongoDB::updateReservation(const std::string& username, const std::string& 
 void MongoDB::updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies, const std::string& purchase_id) noexcept(false) {
     try {
         auto query = bsoncxx::builder::basic::make_document(
-            bsoncxx::builder::basic::kvp("username", username),
-            bsoncxx::builder::basic::kvp("purchases._id", purchase_id)
+            //bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("purchases._id", bsoncxx::oid(purchase_id))
         );
 
         auto user_doc = userCollection.find_one(query.view());
         if (!user_doc) {
-            throw PurchaseException("Prenotazione non trovata per l'utente");
+            throw PurchaseException("Acquisto non trovato per l'utente");
         }
 
         // Aggiorna la prenotazione nel documento dell'utente
@@ -692,7 +703,7 @@ void MongoDB::updatePurchase(const std::string& username, const std::string& gam
         );
 
         if (!result || result->modified_count() == 0) {
-            throw PurchaseException("Nessuna modifica effettuata per la prenotazione");
+            throw PurchaseException("Nessuna modifica effettuata per l'acquisto");
         }
 
         // Aggiorna anche la prenotazione nella collection delle prenotazioni
@@ -855,12 +866,12 @@ void MongoDB::deletePurchase(const std::string& username, const std::string& gam
     try {
         // Costruzione del filtro per il purchase da eliminare
         auto filter = bsoncxx::builder::basic::make_document(
-            bsoncxx::builder::basic::kvp("username", username),
-            bsoncxx::builder::basic::kvp("purchases._id", purchase_id)
+            //bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
         );
 
         // Eliminazione del purchase dalla collezione purchases
-        auto result = reservationCollection.delete_one(filter.view());
+        auto result = purchaseCollection.delete_one(filter.view());
 
         if (result) {
             if (result->deleted_count() == 0) {

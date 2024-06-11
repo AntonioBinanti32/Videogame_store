@@ -69,14 +69,14 @@ namespace handler {
             return;
         }
     }
-    //TODO: Verificare se funziona l'utilizzo del token
+    //TODO: Verificare se funziona l'utilizzo del token addGame/test game/genre/2024-06-11/me/100.0/20/description//a/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxMTA3OTcsInVzZXJuYW1lIjoiYSJ9.ZaijMPZiDcHvCgq3C2-0k06JasjlyUyEi6cEf3V8zf8
     void handleAddGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actual_user, token;
+        std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actualUser, token;
         if (std::getline(iss, title, '/') && std::getline(iss, genre, '/') && std::getline(iss, release_date, '/') &&
             std::getline(iss, developer, '/') && std::getline(iss, price_str, '/') && std::getline(iss, stock_str, '/') &&
             std::getline(iss, description, '/') && std::getline(iss, imageUrl, '/') 
-            && std::getline(iss, actual_user, '/') && std::getline(iss, token, '/')) {
+            && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
 
             try {
                 double price = std::stod(price_str);
@@ -84,30 +84,30 @@ namespace handler {
                 if (imageUrl.empty()) {
                     imageUrl = "https://example.com/default_image.png"; //TODO: Cambiare immagine facoltativa
                 }
-                if (verifyToken(token, actual_user)) {
+                if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
                     mongoDb->addGame(title, genre, release_date, developer, price, stock, description, imageUrl);
-                    const char* response = "Game added successfully";
-                    serverSocket.sendMessage(response, clientSocket);
+                    std::string response = generateJson("", "Game added successfully");
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = "Errore verifica del token";
+                    std::string error = generateJson("", "Errore verifica del token");
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const CreateGameException& e) {
-                std::string error = "Add game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = "Add game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Add game failed: " + std::string(e.what());
+                std::string error = generateJson("", "Add game failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }

@@ -1,6 +1,5 @@
 #include "MongoDB.h"
 
-//TODO: Installare MongoDB: https://www.youtube.com/watch?v=gB6WLkSrtJk
 
 MongoDB* MongoDB::INSTANCE;
 
@@ -80,7 +79,7 @@ void MongoDB::login(const std::string& username, const std::string& pwd) noexcep
 
 
 // Aggiunta di un nuovo gioco
-void MongoDB::addGame(const std::string& title, const std::string& genre, const std::string& release_date, const std::string& developer, double price, int stock, const std::string& description, const std::string& imageUrl) { //TODO: Metter immagine faacoltativa gioco
+void MongoDB::addGame(const std::string& title, const std::string& genre, const std::string& release_date, const std::string& developer, double price, int stock, const std::string& description, const std::string& imageUrl) { 
     bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> doc_value = bsoncxx::builder::basic::make_document(
         bsoncxx::builder::basic::kvp("title", title),
         bsoncxx::builder::basic::kvp("genre", genre),
@@ -359,7 +358,10 @@ void MongoDB::addPurchase(const std::string& username, const std::string& game_t
             throw GetGameException("Game not found");
         }
 
+        bsoncxx::oid purchase_id;
+
         bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> purchase_doc = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id)),
             bsoncxx::builder::basic::kvp("username", username),
             bsoncxx::builder::basic::kvp("game_title", game_title),
             bsoncxx::builder::basic::kvp("num_copies", num_copies),
@@ -468,8 +470,6 @@ std::chrono::system_clock::time_point MongoDB::convertToDate(const std::string& 
     ss >> std::get_time(&tm, "%Y-%m-%d");
     return std::chrono::system_clock::from_time_t(std::mktime(&tm));
 }
-
-//TODO: Verificare metodi Update
 
 // Aggiornamento di un utente
 void MongoDB::updateUser(const std::string& username, const std::string& new_password, const std::string& new_ImageUrl) noexcept(false) {
@@ -670,18 +670,19 @@ void MongoDB::updateReservation(const std::string& username, const std::string& 
     }
 }
 
-void MongoDB::updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies) noexcept(false) {
+void MongoDB::updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies, const std::string& purchase_id) noexcept(false) {
     try {
         auto query = bsoncxx::builder::basic::make_document(
             bsoncxx::builder::basic::kvp("username", username),
-            bsoncxx::builder::basic::kvp("purchases.game_title", game_title)
+            bsoncxx::builder::basic::kvp("purchases._id", purchase_id)
         );
 
         auto user_doc = userCollection.find_one(query.view());
         if (!user_doc) {
-            throw PurchaseException("Purchase not found for user");
+            throw PurchaseException("Prenotazione non trovata per l'utente");
         }
 
+        // Aggiorna la prenotazione nel documento dell'utente
         bsoncxx::builder::basic::document update_builder{};
         update_builder.append(bsoncxx::builder::basic::kvp("purchases.$.num_copies", newNumCopies));
 
@@ -691,21 +692,21 @@ void MongoDB::updatePurchase(const std::string& username, const std::string& gam
         );
 
         if (!result || result->modified_count() == 0) {
-            throw PurchaseException("No modifications made to purchase");
+            throw PurchaseException("Nessuna modifica effettuata per la prenotazione");
         }
 
+        // Aggiorna anche la prenotazione nella collection delle prenotazioni
         auto update_res = bsoncxx::builder::basic::make_document(
-            bsoncxx::builder::basic::kvp("username", username),
-            bsoncxx::builder::basic::kvp("game_title", game_title)
+            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
         );
 
-        auto update_result = purchaseCollection.update_one(
+        auto update_result = reservationCollection.update_one(
             update_res.view(),
             bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("num_copies", newNumCopies))))
         );
 
         if (!update_result || update_result->modified_count() == 0) {
-            throw PurchaseException("No modifications made to purchase in the purchases collection");
+            throw PurchaseException("Nessuna modifica effettuata per la prenotazione nella collection delle prenotazioni");
         }
     }
     catch (const PurchaseException& e) {
@@ -850,24 +851,28 @@ void MongoDB::deleteReservation(const std::string& username, const std::string& 
     }
 }
 
-void MongoDB::deletePurchase(const std::string& username, const std::string& game_title) noexcept(false) {
+void MongoDB::deletePurchase(const std::string& username, const std::string& game_title, const std::string& purchase_id) noexcept(false) {
     try {
+        // Costruzione del filtro per il purchase da eliminare
         auto filter = bsoncxx::builder::basic::make_document(
             bsoncxx::builder::basic::kvp("username", username),
-            bsoncxx::builder::basic::kvp("game_title", game_title)
+            bsoncxx::builder::basic::kvp("purchases._id", purchase_id)
         );
 
-        auto result = purchaseCollection.delete_one(filter.view());
+        // Eliminazione del purchase dalla collezione purchases
+        auto result = reservationCollection.delete_one(filter.view());
 
         if (result) {
             if (result->deleted_count() == 0) {
-                throw PurchaseException("Purchase not found");
+                // Nessun purchase corrispondente è stato trovato
+                throw PurchaseException("Purchase non trovato");
             }
         }
         else {
-            throw PurchaseException("Error deleting purchase");
+            throw PurchaseException("Errore durante l'eliminazione del purchase");
         }
 
+        // Aggiornamento della userCollection per eliminare il purchase dall'array "purchases"
         userCollection.update_one(
             bsoncxx::builder::basic::make_document(
                 bsoncxx::builder::basic::kvp("username", username)
@@ -876,7 +881,7 @@ void MongoDB::deletePurchase(const std::string& username, const std::string& gam
                 bsoncxx::builder::basic::kvp("$pull",
                     bsoncxx::builder::basic::make_document(
                         bsoncxx::builder::basic::kvp("purchases", bsoncxx::builder::basic::make_document(
-                            bsoncxx::builder::basic::kvp("game_title", game_title)
+                            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
                         ))
                     )
                 )

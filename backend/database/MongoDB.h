@@ -68,11 +68,11 @@ public:
     //void updateRecommendation(const std::string& username, const std::vector<std::string>& new_recommendations);
     void updateReview(const std::string& username, const std::string& game_title, const std::string& newReviewText, int newRating);
     void updateReservation(const std::string& username, const std::string& game_title, int newNumCopies);
-    void updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies);
+    void updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies, const std::string& purchase_id);
     void deleteUser(const std::string& username);
     void deleteGame(const std::string& game_title);
     void deleteReservation(const std::string& username, const std::string& game_title);
-    void deletePurchase(const std::string& username, const std::string& game_title);
+    void deletePurchase(const std::string& username, const std::string& game_title, const std::string& purchase_id);
     void deleteReview(const std::string& username, const std::string& game_title);
 };
 

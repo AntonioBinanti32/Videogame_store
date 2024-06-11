@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 
-// TODO: imoplementare purchases handlers
 //TODO: Implementare la logica del jwt Token
 // TODO: Implemendare sistema di raccomandazioni
 
@@ -41,6 +40,9 @@ namespace handler {
         std::string username, password, imageUrl;
         if (std::getline(iss, username, '/') && std::getline(iss, password, '/') && std::getline(iss, imageUrl, '/')) {
             try {
+                if (imageUrl.empty()) {
+                    imageUrl = "https://example.com/default_image.png"; //TODO: Cambiare immagine facoltativa
+                }
                 MongoDB* mongoDb = MongoDB::getInstance();
                 mongoDb->signup(username, password,imageUrl);
                 const char* response = "Signup successful";
@@ -75,6 +77,9 @@ namespace handler {
             try {
                 double price = std::stod(price_str);
                 int stock = std::stoi(stock_str);
+                if (imageUrl.empty()) {
+                    imageUrl = "https://example.com/default_image.png"; //TODO: Cambiare immagine facoltativa
+                }
                 MongoDB* mongoDb = MongoDB::getInstance();
                 mongoDb->addGame(title, genre, release_date, developer, price, stock, description, imageUrl);
                 const char* response = "Game added successfully";
@@ -546,8 +551,8 @@ namespace handler {
 
     void handleUpdatePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, newNumCopies_str;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/')) {
+        std::string username, game_title, newNumCopies_str, purchase_id;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/') && std::getline(iss, purchase_id, '/')) {
             try {
                 int newNumCopies = std::stoi(newNumCopies_str);
                 MongoDB* mongoDb = MongoDB::getInstance();
@@ -557,7 +562,7 @@ namespace handler {
                     throw PurchaseException("Not enough copies available for purchase");
                 }
                 // Aggiorna l'acquisto
-                mongoDb->updatePurchase(username, game_title, newNumCopies);
+                mongoDb->updatePurchase(username, game_title, newNumCopies, purchase_id);
                 const char* response = "Purchase updated successfully";
                 serverSocket.sendMessage(response, clientSocket);
             }
@@ -707,12 +712,12 @@ namespace handler {
 
     void handleDeletePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/')) {
+        std::string username, game_title, purchase_id;
+        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, purchase_id, '/')) {
             try {
                 MongoDB* mongoDb = MongoDB::getInstance();
                 // Elimina l'acquisto
-                mongoDb->deletePurchase(username, game_title);
+                mongoDb->deletePurchase(username, game_title, purchase_id);
                 const char* response = "Purchase deleted successfully";
                 serverSocket.sendMessage(response, clientSocket);
             }

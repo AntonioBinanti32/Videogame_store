@@ -10,7 +10,7 @@ add_executable(Videogame_store "main.cpp"
 "database/MongoDB.h" "database/MongoDB.cpp"
 "handler/Handler.h" "handler/Handler.cpp" 
 "exceptions/SignupException.h" "exceptions/LoginException.h" "exceptions/CreateGameException.h" "exceptions/GetGameException.h" "exceptions/UserNotFoundException.h" "exceptions/CreateReservationException.h" "exceptions/GetRecommendationsException.h" "exceptions/SocketException.h" "exceptions/ReviewException.h" "exceptions/ReservationException.h"
-"socketTcp/SocketTcp.h" "socketTcp/SocketTcp.cpp" "exceptions/ReviewException.h" "exceptions/ReservationException.h" "exceptions/PurchaseException.h")
+"socketTcp/SocketTcp.h" "socketTcp/SocketTcp.cpp" "exceptions/ReviewException.h" "exceptions/ReservationException.h" "exceptions/PurchaseException.h" "exceptions/TokenException.h")
 
 find_package(bsoncxx CONFIG REQUIRED)
 #se esiste una versione statica della libreria mongocxx (mongo::mongocxx_static) la collega. Altrimenti, collega la versione condivisa (mongo::mongocxx_shared).
@@ -34,7 +34,7 @@ target_link_libraries(Videogame_store PRIVATE unofficial::inih::inireader)
 find_package(nlohmann_json CONFIG REQUIRED)
 target_link_libraries(Videogame_store PRIVATE nlohmann_json::nlohmann_json)
 
-find_package(cpp-jwt CONFIG REQUIRED)
+find_package(cpp-jwt CONFIG REQUIRED) #Documentation: https://github.com/arun11299/cpp-jwt
 target_link_libraries(Videogame_store PRIVATE cpp-jwt::cpp-jwt)
 
 if(WIN32)

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 
-//TODO: Implementare la logica del jwt Token
+//TODO: Implementare Token nelle funzioni
 // TODO: Implemendare sistema di raccomandazioni
 
 namespace handler {
@@ -14,8 +14,10 @@ namespace handler {
             try {
                 MongoDB* mongoDb = MongoDB::getInstance();
                 mongoDb->login(username, password);
-                const char* response = "Login successful";
-                serverSocket.sendMessage(response, clientSocket);
+                std::string token = generateJwtToken(username);
+                //Incapsulamento in un json
+                std::string response = generateJson(token, "Login successfully");
+                serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const LoginException& e) {
                 std::string error = "Login failed: " + std::string(e.what());
@@ -45,9 +47,10 @@ namespace handler {
                 }
                 MongoDB* mongoDb = MongoDB::getInstance();
                 mongoDb->signup(username, password,imageUrl);
-                const char* response = "Signup successful";
-                //TODO: Ritornare jwt
-                serverSocket.sendMessage(response, clientSocket);
+                std::string token = generateJwtToken(username);
+                //Incapsulamento in un json
+                std::string response = generateJson(token, "Signup successfully");
+                serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const SignupException& e) {
                 std::string error = "Signup failed: " + std::string(e.what());
@@ -66,13 +69,14 @@ namespace handler {
             return;
         }
     }
-
+    //TODO: Verificare se funziona l'utilizzo del token
     void handleAddGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl;
+        std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actual_user, token;
         if (std::getline(iss, title, '/') && std::getline(iss, genre, '/') && std::getline(iss, release_date, '/') &&
             std::getline(iss, developer, '/') && std::getline(iss, price_str, '/') && std::getline(iss, stock_str, '/') &&
-            std::getline(iss, description, '/') && std::getline(iss, imageUrl, '/')) {
+            std::getline(iss, description, '/') && std::getline(iss, imageUrl, '/') 
+            && std::getline(iss, actual_user, '/') && std::getline(iss, token, '/')) {
 
             try {
                 double price = std::stod(price_str);
@@ -80,12 +84,24 @@ namespace handler {
                 if (imageUrl.empty()) {
                     imageUrl = "https://example.com/default_image.png"; //TODO: Cambiare immagine facoltativa
                 }
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->addGame(title, genre, release_date, developer, price, stock, description, imageUrl);
-                const char* response = "Game added successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actual_user)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    mongoDb->addGame(title, genre, release_date, developer, price, stock, description, imageUrl);
+                    const char* response = "Game added successfully";
+                    serverSocket.sendMessage(response, clientSocket);
+                }
+                else {
+                    std::string error = "Errore verifica del token";
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
             catch (const CreateGameException& e) {
+                std::string error = "Add game failed: " + std::string(e.what());
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
                 std::string error = "Add game failed: " + std::string(e.what());
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
@@ -851,6 +867,37 @@ namespace handler {
             mongoDb->updateReservation(username, game_title, reserved_new);
         }
         return true;
+    }
+
+    std::string generateJwtToken(const std::string& username) {
+        // Restituisco all'utente un jwt token che verrà usato per autenticare l'utente per le varie richieste
+        jwt::jwt_object obj{ jwt::params::algorithm("HS256"), jwt::params::payload({{"username", username}}), jwt::params::secret("secret") };
+        // Aggiunta scadenza al token
+        obj.add_claim("exp", std::chrono::system_clock::now() + std::chrono::hours(2));
+        return obj.signature();
+    }
+
+    std::string generateJson(const std::string& token, const std::string& message) {
+        nlohmann::json response;
+        response["message"] = message;
+        response["token"] = token;
+        return response.dump();
+    }
+
+    bool verifyToken(const std::string& token, const std::string& username) {
+        try {
+            // Verifico che il token passato nel campo Authorization del header sia corretto; se così non fosse restituisco un errore al client
+            auto dec_token = jwt::decode(token, jwt::params::algorithms({ "HS256" }), jwt::params::secret("secret"));
+            if (username == dec_token.payload().get_claim_value<std::string>("username")) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        catch (const jwt::TokenExpiredError& e) {
+            throw;
+        }
     }
 
 

@@ -5,6 +5,7 @@
 #include "../exceptions/HandlerException.h"
 #include "../database/MongoDB.h"
 #include <string>
+#include "jwt/jwt.hpp"
 
 namespace handler {
     void handleClient(SocketTcp& serverSocket, SOCKET clientSocket);
@@ -35,9 +36,12 @@ namespace handler {
     void handleDeleteReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleDeletePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleDeleteReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
+    //TODO: void handleDeleteRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket)
     bool isGameAvailableForPurchase(const std::string& game_title, int num_copies_to_purchase);
     bool removeReservationsForGame(const std::string& username, const std::string& game_title, int num_copies);
-    //TODO: void handleDeleteRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket)
+    std::string generateJwtToken(const std::string& username);
+    std::string generateJson(const std::string& token, const std::string& message);
+    bool verifyToken(const std::string& token, const std::string& username);
 };
 
 #endif // VIDEOGAME_STORE_HANDLER_H

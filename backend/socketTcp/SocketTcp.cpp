@@ -12,7 +12,7 @@ bool SocketTcp::initializeServer(const char* port) {
     // Inizializzazione di Winsock versione 2.2
     int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0) {
-        throw new SocketException("WSAStartup failed with error: " + iResult );
+        throw SocketException("WSAStartup failed with error: " + iResult );
         return false;
     }
     return setupHints(true, nullptr, port) && createSocket();
@@ -21,7 +21,7 @@ bool SocketTcp::initializeServer(const char* port) {
 bool SocketTcp::initializeClient(const char* address, const char* port) {
     int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0) {
-        throw new SocketException("WSAStartup failed with error: " + iResult);
+        throw SocketException("WSAStartup failed with error: " + iResult);
         return false;
     }
     return setupHints(false, address, port) && createSocket();
@@ -39,7 +39,7 @@ bool SocketTcp::setupHints(bool isServer, const char* address, const char* port)
 
     int iResult = getaddrinfo(address, port, &hints, &result);
     if (iResult != 0) {
-        throw new SocketException("getaddrinfo failed with error: " + iResult );
+        throw SocketException("getaddrinfo failed with error: " + iResult );
         WSACleanup();
         return false;
     }
@@ -49,7 +49,7 @@ bool SocketTcp::setupHints(bool isServer, const char* address, const char* port)
 bool SocketTcp::createSocket() {
     Socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (Socket == INVALID_SOCKET) {
-        throw new SocketException("Error at socket(): " + WSAGetLastError());
+        throw SocketException("Error at socket(): " + WSAGetLastError());
         freeaddrinfo(result);
         WSACleanup();
         return false;
@@ -58,7 +58,7 @@ bool SocketTcp::createSocket() {
     if (hints.ai_flags & AI_PASSIVE) {
         // Bind server socket
         if (::bind(Socket, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR) {
-            throw new SocketException("Bind failed with error: " + WSAGetLastError());
+            throw SocketException("Bind failed with error: " + WSAGetLastError());
             freeaddrinfo(result);
             closesocket(Socket);
             WSACleanup();
@@ -92,7 +92,7 @@ void SocketTcp::cleanup() {
 
 bool SocketTcp::listenForConnections(int backlog) {
     if (listen(Socket, backlog) == SOCKET_ERROR) {
-        throw new SocketException("Listen failed with error: " + WSAGetLastError());
+        throw SocketException("Listen failed with error: " + WSAGetLastError());
         cleanup();
         return false;
     }
@@ -102,7 +102,7 @@ bool SocketTcp::listenForConnections(int backlog) {
 SOCKET SocketTcp::acceptConnection() {
     ClientSocket = accept(Socket, nullptr, nullptr);
     if (ClientSocket == INVALID_SOCKET) {
-        throw new SocketException("Accept failed with error: " + WSAGetLastError());
+        throw SocketException("Accept failed with error: " + WSAGetLastError());
         cleanup();
         return INVALID_SOCKET;
     }
@@ -111,9 +111,15 @@ SOCKET SocketTcp::acceptConnection() {
 
 bool SocketTcp::sendMessage(const char* message, SOCKET clientSocket) {
     std::cout << "Socket" << clientSocket << " message: " << message << std::endl;
-    int iResult = send(clientSocket, message, static_cast<int>(strlen(message)), 0);
+    //Aggiungo "\n" come terminatore
+    size_t message_length = strlen(message);
+    char* new_message = (char*)malloc(message_length + 2);
+    strcpy(new_message, message);
+    strcat(new_message, "|");
+    int iResult = send(clientSocket, new_message, static_cast<int>(strlen(new_message)), 0);
+    free(new_message);
     if (iResult == SOCKET_ERROR) {
-        throw new SocketException("Send failed with error: " + WSAGetLastError());
+        throw SocketException("Send failed with error: " + WSAGetLastError());
         cleanup();
         return false;
     }
@@ -130,7 +136,7 @@ bool SocketTcp::receiveMessage(char* buffer, int bufferSize) {
         std::cout << "Connection closed" << std::endl;
     }
     else {
-        throw new SocketException("Receive failed with error: " + WSAGetLastError());
+        throw SocketException("Receive failed with error: " + WSAGetLastError());
     }
     return false;
 }
@@ -139,7 +145,7 @@ bool SocketTcp::connectToServer() {
     // Tentativo di connessione al Server
     int iResult = connect(Socket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
-        throw new SocketException("Connect failed with error: " + WSAGetLastError());
+        throw SocketException("Connect failed with error: " + WSAGetLastError());
         closesocket(Socket);
         Socket = INVALID_SOCKET;
         return false;

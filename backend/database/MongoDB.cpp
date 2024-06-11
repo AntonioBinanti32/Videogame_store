@@ -1,5 +1,6 @@
 #include "MongoDB.h"
 
+
 MongoDB* MongoDB::INSTANCE;
 
 // Ottengo un'istanza di mongocxx da usare per comunicare col database
@@ -26,6 +27,7 @@ void MongoDB::connectDB(const std::string& hostname, const std::string& port, co
         userCollection = database["users"];
         gameCollection = database["games"];
         reservationCollection = database["reservations"];
+        purchaseCollection = database["purchases"];
         recommendationCollection = database["recommendations"];
     }
     catch (std::exception& e) {
@@ -48,8 +50,16 @@ void MongoDB::signup(const std::string& username, const std::string& pwd, const 
         // Inserimento documento creato precedentemente nella collezione userCollection
         userCollection.insert_one(doc_value);
     }
-    catch (mongocxx::bulk_write_exception& e) {
-        throw new SignupException("Utente già presente");
+    catch (const mongocxx::bulk_write_exception& e) {        
+        throw SignupException("Utente gia' registrato");
+    }
+    catch (const mongocxx::exception& e) {
+        std::cerr << "MongoDB exception: " << e.what() << std::endl;
+        throw;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "General exception: " << e.what() << std::endl;
+        throw;
     }
 }
 
@@ -63,13 +73,13 @@ void MongoDB::login(const std::string& username, const std::string& pwd) noexcep
     // Ricerca documento nella collezione
     auto find_one_result = userCollection.find_one(doc_value);
     if (!find_one_result) {
-        throw new LoginException("User non presente");
+        throw LoginException("User non presente o password non corretta");
     }
 }
 
 
 // Aggiunta di un nuovo gioco
-void MongoDB::addGame(const std::string& title, const std::string& genre, const std::string& release_date, const std::string& developer, double price, int stock, const std::string& description, const std::string& imageUrl) { //TODO: Metter immagine faacoltativa gioco
+void MongoDB::addGame(const std::string& title, const std::string& genre, const std::string& release_date, const std::string& developer, double price, int stock, const std::string& description, const std::string& imageUrl) { 
     bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> doc_value = bsoncxx::builder::basic::make_document(
         bsoncxx::builder::basic::kvp("title", title),
         bsoncxx::builder::basic::kvp("genre", genre),
@@ -84,142 +94,357 @@ void MongoDB::addGame(const std::string& title, const std::string& genre, const 
         gameCollection.insert_one(doc_value);
     }
     catch (mongocxx::bulk_write_exception& e) {
-        throw new CreateGameException("Errore durante l'aggiunta del gioco");
+        throw CreateGameException("Errore durante l'aggiunta del gioco");
     }
 }
 
 // Ottenimento della lista dei giochi
-std::vector<bsoncxx::document::value> MongoDB::getGames() {
-    std::vector<bsoncxx::document::value> games;
+nlohmann::json MongoDB::getGames() {
+    nlohmann::json games;
     try {
         auto cursor = gameCollection.find({});
         for (auto&& doc : cursor) {
-            games.push_back(bsoncxx::document::value(doc));
+            games.push_back(nlohmann::json ::parse(bsoncxx::to_json(doc)));
         }
     }
     catch (std::exception& e) {
-        throw new GetGameException("Errore durante il recupero dei giochi");
+        throw  GetGameException("Errore durante il recupero dei giochi");
     }
     return games;
 }
 
 // Ottenimento di un gioco specifico
-bsoncxx::document::value MongoDB::getGame(const std::string& game_id) {
+nlohmann::json MongoDB::getGame(const std::string& game_id) {
     try {
         auto result = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(game_id))));
         if (!result) {
-            throw std::runtime_error("Gioco non trovato");
+            throw GetGameException("Errore durante il recupero del gioco: Gioco non trovato");
         }
-        return bsoncxx::document::value(*result);
+        return nlohmann::json::parse(bsoncxx::to_json(*result));
     }
     catch (std::exception& e) {
-        throw new GetGameException("Errore durante il recupero del gioco");
+        throw GetGameException("Errore durante il recupero del gioco");
     }
 }
 
-// Aggiunta di una recensione
-void MongoDB::addReview(const std::string& username, const std::string& game_id, const std::string& review_text, int rating) {
+nlohmann::json MongoDB::getGameByTitle(const std::string& title) {
     try {
+        auto result = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", title)));
+        if (!result) {
+            throw GetGameException("Errore durante il recupero del gioco: Gioco non trovato");
+        }
+        return nlohmann::json::parse(bsoncxx::to_json(*result));
+    }
+    catch (std::exception& e) {
+        throw GetGameException("Errore durante il recupero del gioco");
+    }
+}
+
+void MongoDB::addReview(const std::string& username, const std::string& game_title, const std::string& review_text, int rating) {
+    try {
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", game_title)));
+        if (!game_doc) {
+            throw GetGameException("Gioco non trovato");
+        }
+        auto game_id = (*game_doc)["_id"].get_oid().value;
+
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
         if (!user_doc) {
-            throw new UserNotFoundException("User not found");
+            throw UserNotFoundException("Utente non trovato");
         }
         auto user_id = (*user_doc)["_id"].get_oid().value;
 
+        //Verifico se il gioco è già stato recensito dall'utente
+        auto query = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("$and",
+                bsoncxx::builder::basic::make_array(
+                    bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews.game_title", game_title)),
+                    bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username))
+                )
+            )
+        );
+
+        auto result = userCollection.find_one(query.view());
+
+        if (result) {
+            throw CreateReviewException("Il gioco e' gia' stato recensito da questo utente");
+        }
+
         bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> review_doc = bsoncxx::builder::basic::make_document(
-            bsoncxx::builder::basic::kvp("user_id", user_id),
+            bsoncxx::builder::basic::kvp("username", username),
             bsoncxx::builder::basic::kvp("review_text", review_text),
             bsoncxx::builder::basic::kvp("rating", rating),
             bsoncxx::builder::basic::kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now()))
         );
 
         gameCollection.update_one(
-            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(game_id))),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", game_id)),
             bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$push", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews", review_doc))))
         );
 
         userCollection.update_one(
             bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", user_id)),
             bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$push", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews", bsoncxx::builder::basic::make_document(
-                bsoncxx::builder::basic::kvp("game_id", bsoncxx::oid(game_id)),
+                bsoncxx::builder::basic::kvp("game_title", game_title),
                 bsoncxx::builder::basic::kvp("review_text", review_text),
                 bsoncxx::builder::basic::kvp("rating", rating),
                 bsoncxx::builder::basic::kvp("created_at", bsoncxx::types::b_date(std::chrono::system_clock::now()))
             )))))
         );
     }
+    catch (GetGameException& e) {
+        throw;
+    }
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (CreateReviewException& e) {
+        throw;
+    }
     catch (std::exception& e) {
-        throw new CreateReviewException("Errore durante l'aggiunta della recensione");
+        throw CreateReviewException("Errore durante l'aggiunta della recensione");
     }
 }
 
+
 // Ottenimento di una recensione specifica
-bsoncxx::document::value MongoDB::getReview(const std::string& review_id) {
+nlohmann::json MongoDB::getReview(const std::string& review_id) {
     try {
         auto result = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews._id", bsoncxx::oid(review_id))));
         if (!result) {
-            throw std::runtime_error("Recensione non trovata");
+            throw ReviewException("Recensione non trovata");
         }
+
         auto reviews = (*result)["reviews"].get_array().value;
         for (const auto& review : reviews) {
             auto review_doc = review.get_document().value;
             if (review_doc["_id"].get_oid().value.to_string() == review_id) {
-                return bsoncxx::document::value(review_doc);
+                return nlohmann::json::parse(bsoncxx::to_json(review_doc));
             }
         }
-        throw std::runtime_error("Recensione non trovata");
+        throw ReviewException("Recensione non trovata");
     }
     catch (std::exception& e) {
-        throw std::runtime_error("Errore durante il recupero della recensione");
+        throw ReviewException("Errore durante il recupero della recensione");
     }
 }
 
-// Aggiunta di una prenotazione
-void MongoDB::addReservation(const std::string& username, const std::string& game_id) {
+nlohmann::json MongoDB::getReviewByUser(const std::string& username) {
     try {
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
         if (!user_doc) {
-            throw new UserNotFoundException("User not found");
+            throw UserNotFoundException("Utente non trovato");
         }
         auto user_id = (*user_doc)["_id"].get_oid().value;
 
+        auto result = gameCollection.find(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reviews.username", username)));
+        nlohmann::json reviews_json;
+        for (const auto& doc : result) {
+            auto reviews = doc["reviews"].get_array().value;
+            for (const auto& review : reviews) {
+                auto review_doc = review.get_document().value;
+                if (review_doc["username"].get_string().value == username) {
+                    reviews_json.push_back(nlohmann::json::parse(bsoncxx::to_json(review_doc)));
+                }
+            }
+        }
+
+        return reviews_json;
+    }
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (std::exception& e) {
+        throw ReviewException("Errore durante il recupero delle recensioni dell'utente");
+    }
+}
+
+nlohmann::json MongoDB::getReviewByGame(const std::string& game_title) {
+    try {
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", game_title)));
+        if (!game_doc) {
+            throw GetGameException("Gioco non trovato");
+        }
+        auto game_id = (*game_doc)["_id"].get_oid().value;
+
+        auto result = gameCollection.find(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", game_id)));
+
+        nlohmann::json reviews_json;
+        for (const auto& doc : result) {
+            auto reviews = doc["reviews"].get_array().value;
+            for (const auto& review : reviews) {
+                auto review_doc = review.get_document().value;
+                reviews_json.push_back(nlohmann::json::parse(bsoncxx::to_json(review_doc)));
+            }
+        }
+        return reviews_json;
+    }
+    catch (GetGameException& e) {
+        throw;
+    }
+    catch (std::exception& e) {
+        throw ReviewException("Errore durante il recupero delle recensioni del gioco");
+    }
+}
+
+
+// Aggiunta di una prenotazione
+void MongoDB::addReservation(const std::string& username, const std::string& game_title, int num_copies) {
+    try {
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("User not found");
+        }
+        auto user_id = (*user_doc)["_id"].get_oid().value;
+
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", game_title)));
+        if (!game_doc) {
+            throw GetGameException("Game not found");
+        }
+
+        //Verifico se il gioco è già stato prenotato dall'utente
+        auto query = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("$and",
+                bsoncxx::builder::basic::make_array(
+                    bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reservations.game_title", game_title)),
+                    bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username))
+                )
+            )
+        );
+
+        auto result = userCollection.find_one(query.view());
+
+        if (result) {
+            throw CreateReservationException("Il gioco e' gia' stato prenotato da questo utente");
+        }
+
         bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> reservation_doc = bsoncxx::builder::basic::make_document(
-            bsoncxx::builder::basic::kvp("user_id", user_id),
-            bsoncxx::builder::basic::kvp("game_id", bsoncxx::oid(game_id)),
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("game_title", game_title),
+            bsoncxx::builder::basic::kvp("num_copies", num_copies),
             bsoncxx::builder::basic::kvp("reservation_date", bsoncxx::types::b_date(std::chrono::system_clock::now()))
         );
         reservationCollection.insert_one(reservation_doc);
 
         userCollection.update_one(
-            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", user_id)),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)),
             bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$push", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("reservations", reservation_doc))))
         );
     }
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (GetGameException& e) {
+        throw;
+    }
+    catch (CreateReservationException& e) {
+        throw;
+    }
     catch (std::exception& e) {
-        throw new CreateReservationException("Errore durante l'aggiunta della prenotazione");
+        throw CreateReservationException("Errore durante l'aggiunta della prenotazione");
+    }
+}
+
+void MongoDB::addPurchase(const std::string& username, const std::string& game_title, int num_copies) {
+    try {
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("User not found");
+        }
+        auto user_id = (*user_doc)["_id"].get_oid().value;
+
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", game_title)));
+        if (!game_doc) {
+            throw GetGameException("Game not found");
+        }
+
+        bsoncxx::oid purchase_id;
+
+        bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> purchase_doc = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id)),
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("game_title", game_title),
+            bsoncxx::builder::basic::kvp("num_copies", num_copies),
+            bsoncxx::builder::basic::kvp("purchase_date", bsoncxx::types::b_date(std::chrono::system_clock::now()))
+        );
+        purchaseCollection.insert_one(purchase_doc);
+
+        userCollection.update_one(
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$push", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("purchases", purchase_doc))))
+        );
+    }
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (GetGameException& e) {
+        throw;
+    }
+    catch (std::exception& e) {
+        throw PurchaseException("Error adding purchase");
     }
 }
 
 // Ottenimento di una prenotazione specifica
-bsoncxx::document::value MongoDB::getReservation(const std::string& reservation_id) {
+nlohmann::json MongoDB::getReservations(const std::string& username) {
     try {
-        auto result = reservationCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(reservation_id))));
-        if (!result) {
-            throw std::runtime_error("Prenotazione non trovata");
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("User not found");
         }
-        return bsoncxx::document::value(*result);
+        auto user_id = (*user_doc)["_id"].get_oid().value;
+        
+        auto cursor = reservationCollection.find(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+
+        nlohmann::json reservations_json;
+
+        for (const auto& doc : cursor) {
+            reservations_json.push_back(nlohmann::json::parse(bsoncxx::to_json(doc)));
+        }
+
+        return reservations_json;
+    }
+    catch (UserNotFoundException& e) {
+        throw;
     }
     catch (std::exception& e) {
-        throw std::runtime_error("Errore durante il recupero della prenotazione");
+        throw ReservationException("Errore durante il recupero della prenotazione");
     }
 }
 
+nlohmann::json MongoDB::getPurchases(const std::string& username) {
+    try {
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("User not found");
+        }
+        auto user_id = (*user_doc)["_id"].get_oid().value;
+
+        auto cursor = purchaseCollection.find(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+
+        nlohmann::json purchases_json;
+
+        for (const auto& doc : cursor) {
+            purchases_json.push_back(nlohmann::json::parse(bsoncxx::to_json(doc)));
+        }
+
+        return purchases_json;
+    }
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (std::exception& e) {
+        throw PurchaseException("Error retrieving purchases");
+    }
+}
+
+/*TODO: 
 // Ottenimento delle raccomandazioni per un utente
 std::vector<bsoncxx::document::value> MongoDB::getRecommendations(const std::string& username) {
     try {
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
         if (!user_doc) {
-            throw new UserNotFoundException("User not found");
+            throw UserNotFoundException("User not found");
         }
         auto user_id = (*user_doc)["_id"].get_oid().value;
 
@@ -234,9 +459,9 @@ std::vector<bsoncxx::document::value> MongoDB::getRecommendations(const std::str
         return recommendations;
     }
     catch (std::exception& e) {
-        throw new GetRecommendationsException("Errore durante il recupero delle raccomandazioni");
+        throw GetRecommendationsException("Errore durante il recupero delle raccomandazioni");
     }
-}
+}*/
 
 // Funzione helper per convertire stringa a ISODate
 std::chrono::system_clock::time_point MongoDB::convertToDate(const std::string& date) {
@@ -246,61 +471,267 @@ std::chrono::system_clock::time_point MongoDB::convertToDate(const std::string& 
     return std::chrono::system_clock::from_time_t(std::mktime(&tm));
 }
 
-//TODO: Verificare metodi Update
-/*
 // Aggiornamento di un utente
-void MongoDB::updateUser(const std::string& username, const std::string& new_password, const std::string& new_imageUrl) {
+void MongoDB::updateUser(const std::string& username, const std::string& new_password, const std::string& new_ImageUrl) noexcept(false) {
     try {
-        bsoncxx::builder::stream::document filter_builder;
-        filter_builder << "username" << username;
+        // Verifico se l'utente esiste
+        auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!user_doc) {
+            throw UserNotFoundException("Utente non trovato");
+        }
 
-        bsoncxx::builder::stream::document update_builder;
-        update_builder << "$set" << bsoncxx::builder::stream::open_document;
+        // Costruisco l'aggiornamento
+        bsoncxx::builder::basic::document update_builder{};
         if (!new_password.empty()) {
-            update_builder << "password" << new_password;
+            update_builder.append(bsoncxx::builder::basic::kvp("password", new_password));
         }
-        if (!new_imageUrl.empty()) {
-            update_builder << "image_url" << new_imageUrl;
+        if (!new_ImageUrl.empty()) {
+            update_builder.append(bsoncxx::builder::basic::kvp("image_url", new_ImageUrl));
         }
-        update_builder << bsoncxx::builder::stream::close_document;
 
-        auto result = userCollection.update_one(filter_builder.view(), update_builder.view());
-        if (result->modified_count() == 0) {
-            throw std::runtime_error("Utente non aggiornato");
+        // Aggiorno il documento dell'utente
+        auto result = userCollection.update_one(
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", update_builder.extract()))
+        );
+
+        if (!result || result->modified_count() == 0) {
+            throw HandlerException("Nessuna modifica effettuata per l'utente");
         }
     }
-    catch (std::exception& e) {
-        throw std::runtime_error("Errore durante l'aggiornamento dell'utente");
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
     }
 }
 
 // Aggiornamento di un gioco
-void MongoDB::updateGame(const std::string& game_id, const std::string& new_title, const std::string& new_genre, const std::string& new_release_date, const std::string& new_developer, double new_price, int new_stock, const std::string& new_description, const std::string& new_imageUrl) {
+void MongoDB::updateGame(const std::string& title, const std::string& newGenre, const std::string& newReleaseDate, const std::string& newDeveloper, double newPrice, int newStock, const std::string& newDescription, const std::string& newImageUrl) noexcept(false) {
     try {
-        bsoncxx::builder::stream::document filter_builder;
-        filter_builder << "_id" << bsoncxx::oid(game_id);
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", title)));
+        if (!game_doc) {
+            throw GetGameException("Gioco non trovato");
+        }
 
-        bsoncxx::builder::stream::document update_builder;
-        update_builder << "$set" << bsoncxx::builder::stream::open_document
-            << "title" << new_title
-            << "genre" << new_genre
-            << "release_date" << bsoncxx::types::b_date(convertToDate(new_release_date))
-            << "developer" << new_developer
-            << "price" << new_price
-            << "stock" << new_stock
-            << "description" << new_description
-            << "image_url" << new_imageUrl
-            << bsoncxx::builder::stream::close_document;
+        bsoncxx::builder::basic::document update_builder{};
+        if (!newGenre.empty()) {
+            update_builder.append(bsoncxx::builder::basic::kvp("genre", newGenre));
+        }
+        if (!newReleaseDate.empty()) {
+            update_builder.append(bsoncxx::builder::basic::kvp("release_date", bsoncxx::types::b_date(convertToDate(newReleaseDate))));
+        }
+        if (!newDeveloper.empty()) {
+            update_builder.append(bsoncxx::builder::basic::kvp("developer", newDeveloper));
+        }
+        if (newPrice != -1) {
+            update_builder.append(bsoncxx::builder::basic::kvp("price", newPrice));
+        }
+        if (newStock != -1) {
+            update_builder.append(bsoncxx::builder::basic::kvp("stock", newStock));
+        }
+        if (!newDescription.empty()) {
+            update_builder.append(bsoncxx::builder::basic::kvp("description", newDescription));
+        }
+        if (!newImageUrl.empty()) {
+            update_builder.append(bsoncxx::builder::basic::kvp("image_url", newImageUrl));
+        }
 
-        auto result = gameCollection.update_one(filter_builder.view(), update_builder.view());
-        if (result->modified_count() == 0) {
-            throw std::runtime_error("Gioco non aggiornato");
+        auto result = gameCollection.update_one(
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", title)),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", update_builder.extract()))
+        );
+
+        if (!result || result->modified_count() == 0) {
+            throw HandlerException("Nessuna modifica effettuata per il gioco");
         }
     }
-    catch (std::exception& e) {
-        throw std::runtime_error("Errore durante l'aggiornamento del gioco");
+    catch (GetGameException& e) {
+        throw;
     }
-}*/
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
+    }
+}
+
+void MongoDB::updateReview(const std::string& username, const std::string& game_title, const std::string& newReviewText, int newRating) noexcept(false) {
+    try {
+        // Verifico se il gioco è stato recensito dall'utente
+        auto query = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("reviews.game_title", game_title)
+        );
+
+        auto user_doc = userCollection.find_one(query.view());
+        if (!user_doc) {
+            throw ReviewException("Recensione non trovata per l'utente");
+        }
+
+        // Aggiorno la recensione nel documento dell'utente
+        bsoncxx::builder::basic::document update_builder{};
+        if (!newReviewText.empty()) {
+            update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.review_text", newReviewText));
+        }
+        if (newRating != -1) {
+            update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.rating", newRating));
+        }
+        
+        //update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.review_text", newReviewText));
+        //update_builder.append(bsoncxx::builder::basic::kvp("reviews.$.rating", newRating));
+
+        auto result = userCollection.update_one(
+            query.view(),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", update_builder.extract()))
+        );
+
+        if (!result || result->modified_count() == 0) {
+            throw ReviewException("Nessuna modifica effettuata per la recensione");
+        }
+
+        auto query_game = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("title", game_title),
+            bsoncxx::builder::basic::kvp("reviews.username", username)
+        );
+
+        // Aggiorno la recensione nel documento del gioco
+        bsoncxx::builder::basic::document update_builder_game{};
+        if (!newReviewText.empty()) {
+            update_builder_game.append(bsoncxx::builder::basic::kvp("reviews.$.review_text", newReviewText));
+        }
+        if (newRating != -1) {
+            update_builder_game.append(bsoncxx::builder::basic::kvp("reviews.$.rating", newRating));
+        }
+
+        auto result2 = gameCollection.update_one(
+            query_game.view(),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", update_builder_game.extract()))
+        );
+
+        if (!result2 || result2->modified_count() == 0) {
+            throw ReviewException("Nessuna modifica effettuata per la recensione");
+        }
+    }
+    catch (const ReviewException& e) {
+        throw;
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
+    }
+}
+
+void MongoDB::updateReservation(const std::string& username, const std::string& game_title, int newNumCopies) noexcept(false) {
+    try {
+        // Verifico se la prenotazione esiste per l'utente e il gioco specificati
+        auto query = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("reservations.game_title", game_title)
+        );
+
+        auto user_doc = userCollection.find_one(query.view());
+        if (!user_doc) {
+            throw ReservationException("Prenotazione non trovata per l'utente");
+        }
+
+        // Aggiorno la prenotazione nel documento dell'utente
+        bsoncxx::builder::basic::document update_builder{};
+        update_builder.append(bsoncxx::builder::basic::kvp("reservations.$.num_copies", newNumCopies));
+
+        auto result = userCollection.update_one(
+            query.view(),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", update_builder.extract()))
+        );
+
+        if (!result || result->modified_count() == 0) {
+            throw ReservationException("Nessuna modifica effettuata per la prenotazione");
+        }
+
+        // Aggiorno la prenotazione anche nella collection delle prenotazioni
+        auto update_res = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("game_title", game_title)
+        );
+
+        auto update_result = reservationCollection.update_one(
+            update_res.view(),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("num_copies", newNumCopies))))
+        );
+
+        if (!update_result || update_result->modified_count() == 0) {
+            throw ReservationException("Nessuna modifica effettuata per la prenotazione nella collection delle prenotazioni");
+        }
+    }
+    catch (const ReservationException& e) {
+        throw;
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
+    }
+}
+
+void MongoDB::updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies, const std::string& purchase_id) noexcept(false) {
+    try {
+        auto query = bsoncxx::builder::basic::make_document(
+            //bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("purchases._id", bsoncxx::oid(purchase_id))
+        );
+
+        auto user_doc = userCollection.find_one(query.view());
+        if (!user_doc) {
+            throw PurchaseException("Acquisto non trovato per l'utente");
+        }
+
+        // Aggiorna la prenotazione nel documento dell'utente
+        bsoncxx::builder::basic::document update_builder{};
+        update_builder.append(bsoncxx::builder::basic::kvp("purchases.$.num_copies", newNumCopies));
+
+        auto result = userCollection.update_one(
+            query.view(),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", update_builder.extract()))
+        );
+
+        if (!result || result->modified_count() == 0) {
+            throw PurchaseException("Nessuna modifica effettuata per l'acquisto");
+        }
+
+        // Aggiorna anche la prenotazione nella collection delle prenotazioni
+        auto update_res = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
+        );
+
+        auto update_result = reservationCollection.update_one(
+            update_res.view(),
+            bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("num_copies", newNumCopies))))
+        );
+
+        if (!update_result || update_result->modified_count() == 0) {
+            throw PurchaseException("Nessuna modifica effettuata per la prenotazione nella collection delle prenotazioni");
+        }
+    }
+    catch (const PurchaseException& e) {
+        throw;
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
+    }
+}
+
+
 
 //TODO: Sistemare funzione
 // Aggiornamento di una raccomandazione
@@ -328,169 +759,228 @@ void MongoDB::updateGame(const std::string& game_id, const std::string& new_titl
     }
 }
 
-// Aggiornamento di una recensione
-void MongoDB::updateReview(const std::string& review_id, const std::string& new_text, int new_rating) {
+*/
+
+void MongoDB::deleteUser(const std::string& username) noexcept(false) {
     try {
-        bsoncxx::builder::stream::document filter_builder;
-        filter_builder << "reviews._id" << bsoncxx::oid(review_id);
+        // Costruzione del filtro per l'utente da eliminare
+        auto filter = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username)
+        );
 
-        bsoncxx::builder::stream::document update_builder;
-        update_builder << "$set" << bsoncxx::builder::stream::open_document
-            << "reviews.$.text" << new_text
-            << "reviews.$.rating" << new_rating
-            << bsoncxx::builder::stream::close_document;
+        // Eliminazione dell'utente dalla collezione userCollection
+        auto result = userCollection.delete_one(filter.view());
 
-        auto result = gameCollection.update_one(filter_builder.view(), update_builder.view());
-        if (result->modified_count() == 0) {
-            throw std::runtime_error("Recensione non aggiornata");
+        if (result) {
+            if (result->deleted_count() == 0) {
+                // Nessun utente corrispondente è stato trovato
+                throw UserNotFoundException("Utente non trovato");
+            }
+        }
+        else {
+            throw std::runtime_error("Errore durante l'eliminazione dell'utente");
         }
     }
-    catch (std::exception& e) {
-        throw std::runtime_error("Errore durante l'aggiornamento della recensione");
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
     }
 }
 
-// Aggiornamento di una prenotazione
-void MongoDB::updateReservation(const std::string& reservation_id, const std::string& new_game_id) {
+void MongoDB::deleteGame(const std::string& game_title) noexcept(false) {
     try {
-        bsoncxx::builder::stream::document filter_builder;
-        filter_builder << "_id" << bsoncxx::oid(reservation_id);
+        // Costruzione del filtro per il gioco da eliminare
+        auto filter = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("title", game_title)
+        );
 
-        bsoncxx::builder::stream::document update_builder;
-        update_builder << "$set" << bsoncxx::builder::stream::open_document
-            << "game_id" << new_game_id
-            << bsoncxx::builder::stream::close_document;
+        // Eliminazione del gioco dalla collezione gameCollection
+        auto result = gameCollection.delete_one(filter.view());
 
-        auto result = reservationCollection.update_one(filter_builder.view(), update_builder.view());
-        if (result->modified_count() == 0) {
-            throw std::runtime_error("Prenotazione non aggiornata");
+        if (result) {
+            if (result->deleted_count() == 0) {
+                // Nessun gioco corrispondente è stato trovato
+                throw GetGameException("Gioco non trovato");
+            }
+        }
+        else {
+            throw std::runtime_error("Errore durante l'eliminazione del gioco");
         }
     }
-    catch (std::exception& e) {
-        throw std::runtime_error("Errore durante l'aggiornamento della prenotazione");
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
     }
 }
 
-//TODO: Controllare funzioni per gestione db
-
-// Aggiornamento di un gioco
-void MongoDB::updateGame(const std::string& game_id, const std::string& new_title, const std::string& new_genre, const std::string& new_release_date, const std::string& new_developer, double new_price, int new_stock, const std::string& new_description, const std::string& new_imageUrl) {
+void MongoDB::deleteReservation(const std::string& username, const std::string& game_title) noexcept(false) {
     try {
-        bsoncxx::builder::stream::document filter_builder;
-        filter_builder << "_id" << bsoncxx::oid(game_id);
+        // Costruzione del filtro per la prenotazione da eliminare
+        auto filter = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("game_title", game_title)
+        );
 
-        bsoncxx::builder::stream::document update_builder;
-        update_builder << "$set" << bsoncxx::builder::stream::open_document;
+        // Eliminazione della prenotazione dalla collezione reservationCollection
+        auto result = reservationCollection.delete_one(filter.view());
 
-        if (!new_title.empty()) update_builder << "title" << new_title;
-        if (!new_genre.empty()) update_builder << "genre" << new_genre;
-        if (!new_release_date.empty()) update_builder << "release_date" << bsoncxx::types::b_date(convertToDate(new_release_date));
-        if (!new_developer.empty()) update_builder << "developer" << new_developer;
-        if (new_price >= 0) update_builder << "price" << new_price;
-        if (new_stock >= 0) update_builder << "stock" << new_stock;
-        if (!new_description.empty()) update_builder << "description" << new_description;
-        if (!new_imageUrl.empty()) update_builder << "image_url" << new_imageUrl;
-
-        update_builder << bsoncxx::builder::stream::close_document;
-
-        auto result = gameCollection.update_one(filter_builder.view(), update_builder.view());
-        if (result && result->modified_count() == 0) {
-            throw std::runtime_error("Gioco non aggiornato");
+        if (result) {
+            if (result->deleted_count() == 0) {
+                // Nessuna prenotazione corrispondente è stata trovata
+                throw ReservationException("Prenotazione non trovata");
+            }
         }
+        else {
+            throw ReservationException("Errore durante l'eliminazione della prenotazione");
+        }
+
+        // Aggiornamento della userCollection per eliminare la prenotazione dall'array "reservations"
+        userCollection.update_one(
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("username", username)
+            ),
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("$pull",
+                    bsoncxx::builder::basic::make_document(
+                        bsoncxx::builder::basic::kvp("reservations", bsoncxx::builder::basic::make_document(
+                            bsoncxx::builder::basic::kvp("game_title", game_title)
+                        ))
+                    )
+                )
+            )
+        );
     }
-    catch (std::exception& e) {
-        throw std::runtime_error("Errore durante l'aggiornamento del gioco");
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
     }
 }
 
-// Aggiornamento di una raccomandazione
-void MongoDB::updateRecommendation(const std::string& username, const std::vector<std::string>& new_recommendations) {
+void MongoDB::deletePurchase(const std::string& username, const std::string& game_title, const std::string& purchase_id) noexcept(false) {
     try {
-        // Trova il documento dell'utente
+        // Costruzione del filtro per il purchase da eliminare
+        auto filter = bsoncxx::builder::basic::make_document(
+            //bsoncxx::builder::basic::kvp("username", username),
+            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
+        );
+
+        // Eliminazione del purchase dalla collezione purchases
+        auto result = purchaseCollection.delete_one(filter.view());
+
+        if (result) {
+            if (result->deleted_count() == 0) {
+                // Nessun purchase corrispondente è stato trovato
+                throw PurchaseException("Purchase non trovato");
+            }
+        }
+        else {
+            throw PurchaseException("Errore durante l'eliminazione del purchase");
+        }
+
+        // Aggiornamento della userCollection per eliminare il purchase dall'array "purchases"
+        userCollection.update_one(
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("username", username)
+            ),
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("$pull",
+                    bsoncxx::builder::basic::make_document(
+                        bsoncxx::builder::basic::kvp("purchases", bsoncxx::builder::basic::make_document(
+                            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
+                        ))
+                    )
+                )
+            )
+        );
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
+    }
+}
+
+void MongoDB::deleteReview(const std::string& username, const std::string& game_title) noexcept(false) {
+    try {
+
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
         if (!user_doc) {
-            throw new UserNotFoundException("User not found");
-        }
-        auto user_id = (*user_doc)["_id"].get_oid().value;
-
-        // Crea il filtro per trovare il documento delle raccomandazioni
-        bsoncxx::builder::basic::document filter_builder;
-        filter_builder.append(bsoncxx::builder::basic::kvp("user_id", user_id));
-
-        // Crea l'array dei nuovi game_id da aggiornare
-        bsoncxx::builder::basic::array recommendations_array;
-        for (const auto& game_id : new_recommendations) {
-            recommendations_array.append(bsoncxx::oid(game_id));
+            throw UserNotFoundException("Utente non trovato");
         }
 
-        // Crea il documento di aggiornamento
-        bsoncxx::builder::basic::document update_builder;
-        update_builder.append(
-            bsoncxx::builder::basic::kvp(
-                "$set",
+        auto game_doc = gameCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("title", game_title)));
+        if (!game_doc) {
+            throw GetGameException("Gioco non trovato");
+        }
+
+        // Costruzione del filtro per la recensione da eliminare nell'array "reviews" del gioco
+        auto game_filter = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("title", game_title)
+        );
+
+        auto game_update = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("$pull", //per rimuovere l'elemento dall'array
                 bsoncxx::builder::basic::make_document(
-                    bsoncxx::builder::basic::kvp("recommended_games", recommendations_array)
+                    bsoncxx::builder::basic::kvp("reviews",
+                        bsoncxx::builder::basic::make_document(
+                            bsoncxx::builder::basic::kvp("username", username)
+                        )
+                    )
                 )
             )
         );
 
-        // Esegue l'aggiornamento
-        auto result = recommendationCollection.update_one(filter_builder.view(), update_builder.view());
-        if (!result || result->modified_count() == 0) {
-            throw std::runtime_error("Raccomandazioni non aggiornate");
+        auto game_result = gameCollection.update_one(game_filter.view(), game_update.view());
+
+        if (!game_result || game_result->modified_count() == 0) {
+            throw CreateReviewException("Recensione non trovata nel gioco");
+        }
+
+        // Aggiornamento della userCollection per eliminare la recensione dall'array "reviews" dell'utente
+        auto user_filter = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("username", username)
+        );
+
+        auto user_update = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("$pull",
+                bsoncxx::builder::basic::make_document(
+                    bsoncxx::builder::basic::kvp("reviews",
+                        bsoncxx::builder::basic::make_document(
+                            bsoncxx::builder::basic::kvp("game_title", game_title)
+                        )
+                    )
+                )
+            )
+        );
+
+        auto user_result = userCollection.update_one(user_filter.view(), user_update.view());
+
+        if (!user_result || user_result->modified_count() == 0) {
+            std::cerr << "Recensione non trovata per l'utente" << std::endl;
+            throw ReviewException("Recensione non trovata per l'utente");
         }
     }
-    catch (std::exception& e) {
-        throw std::runtime_error("Errore durante l'aggiornamento delle raccomandazioni: " + std::string(e.what()));
+    catch (GetGameException& e) {
+        throw;
+    }
+    catch (UserNotFoundException& e) {
+        throw;
+    }
+    catch (CreateReviewException& e) {
+        throw;
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
     }
 }
 
-
-
-// Aggiornamento di una recensione
-void MongoDB::updateReview(const std::string& review_id, const std::string& new_text, int new_rating) {
-    try {
-        bsoncxx::builder::stream::document filter_builder;
-        filter_builder << "reviews._id" << bsoncxx::oid(review_id);
-
-        bsoncxx::builder::stream::document update_builder;
-        update_builder << "$set" << bsoncxx::builder::stream::open_document
-            << "reviews.$.review_text" << new_text
-            << "reviews.$.rating" << new_rating
-            << bsoncxx::builder::stream::close_document;
-
-        auto result = gameCollection.update_one(filter_builder.view(), update_builder.view());
-        if (result && result->modified_count() == 0) {
-            throw std::runtime_error("Recensione non aggiornata");
-        }
-    }
-    catch (std::exception& e) {
-        throw std::runtime_error("Errore durante l'aggiornamento della recensione");
-    }
-}
-
-
-// Aggiornamento di una prenotazione
-void MongoDB::updateReservation(const std::string& reservation_id, const std::string& new_game_id) {
-    try {
-        bsoncxx::builder::stream::document filter_builder;
-        filter_builder << "_id" << bsoncxx::oid(reservation_id);
-
-        bsoncxx::builder::stream::document update_builder;
-        update_builder << "$set" << bsoncxx::builder::stream::open_document
-            << "game_id" << bsoncxx::oid(new_game_id)
-            << bsoncxx::builder::stream::close_document;
-
-        auto result = reservationCollection.update_one(filter_builder.view(), update_builder.view());
-        if (result && result->modified_count() == 0) {
-            throw std::runtime_error("Prenotazione non aggiornata");
-        }
-    }
-    catch (std::exception& e) {
-        throw std::runtime_error("Errore durante l'aggiornamento della prenotazione");
-    }
-}*/
-
-
-
-//TODO: Completare funzioni per gestione db

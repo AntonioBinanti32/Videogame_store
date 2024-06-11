@@ -15,6 +15,10 @@
 #include "../exceptions/GetGameException.h"
 #include "../exceptions/GetRecommendationsException.h"
 #include "../exceptions/UserNotFoundException.h"
+#include "../exceptions/ReviewException.h"
+#include "../exceptions/ReservationException.h"
+#include "../exceptions/HandlerException.h"
+#include "../exceptions/PurchaseException.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <vector>
@@ -33,6 +37,7 @@ private:
     mongocxx::collection gameCollection;
     mongocxx::collection reservationCollection;
     mongocxx::collection recommendationCollection;
+    mongocxx::collection purchaseCollection;
 
     static MongoDB* INSTANCE;
 
@@ -44,19 +49,31 @@ public:
     void signup(const std::string& username, const std::string& pwd, const std::string& imageUrl) noexcept(false);
     void login(const std::string& username, const std::string& pwd) noexcept(false);
     void addGame(const std::string& title, const std::string& genre, const std::string& release_date, const std::string& developer, double price, int stock, const std::string& description, const std::string& imageUrl);
-    std::vector<bsoncxx::document::value> getGames();
-    bsoncxx::document::value getGame(const std::string& game_id);
-    bsoncxx::document::value getReview(const std::string& review_id);
-    void addReview(const std::string& username, const std::string& game_id, const std::string& review_text, int rating);
-    void addReservation(const std::string& username, const std::string& game_id);
-    bsoncxx::document::value getReservation(const std::string& reservation_id);
-    std::vector<bsoncxx::document::value> getRecommendations(const std::string& username);
+    nlohmann::json getGames();
+    nlohmann::json getGame(const std::string& game_id);
+    nlohmann::json MongoDB::getGameByTitle(const std::string& game_id);
+    nlohmann::json MongoDB::getReview(const std::string& review_id);
+    nlohmann::json MongoDB::getReviewByUser(const std::string& username);
+    nlohmann::json MongoDB::getReviewByGame(const std::string& game_title);
+    void addReview(const std::string& username, const std::string& game_title, const std::string& review_text, int rating);
+    void addReservation(const std::string& username, const std::string& game_id, int num_copies);
+    void addPurchase(const std::string& username, const std::string& game_title, int num_copies);
+    nlohmann::json getReservations(const std::string& username);
+    nlohmann::json getPurchases(const std::string& username);
+    //TODO: std::vector<bsoncxx::document::value> getRecommendations(const std::string& username);
     std::chrono::system_clock::time_point convertToDate(const std::string& date);
-    //void updateUser(const std::string& username, const std::string& new_password, const std::string& new_imageUrl);
-    //void updateGame(const std::string& game_id, const std::string& new_title, const std::string& new_genre, const std::string& new_release_date, const std::string& new_developer, double new_price, int new_stock, const std::string& new_description, const std::string& new_imageUrl);
+   //TODO: Implementare funzioni update
+    void updateUser(const std::string& username, const std::string& new_password, const std::string& new_imageUrl);
+    void updateGame(const std::string& title, const std::string& newGenre, const std::string& newReleaseDate, const std::string& newDeveloper, double newPrice, int newStock, const std::string& newDescription, const std::string& newImageUrl);
     //void updateRecommendation(const std::string& username, const std::vector<std::string>& new_recommendations);
-    //void updateReview(const std::string& review_id, const std::string& new_text, int new_rating);
-    //void updateReservation(const std::string& reservation_id, const std::string& new_game_id);
+    void updateReview(const std::string& username, const std::string& game_title, const std::string& newReviewText, int newRating);
+    void updateReservation(const std::string& username, const std::string& game_title, int newNumCopies);
+    void updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies, const std::string& purchase_id);
+    void deleteUser(const std::string& username);
+    void deleteGame(const std::string& game_title);
+    void deleteReservation(const std::string& username, const std::string& game_title);
+    void deletePurchase(const std::string& username, const std::string& game_title, const std::string& purchase_id);
+    void deleteReview(const std::string& username, const std::string& game_title);
 };
 
 

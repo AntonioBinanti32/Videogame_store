@@ -2,8 +2,6 @@
 #include "socketTcp/SocketTcp.h"
 #include "handler/Handler.h"
 #include "INIReader.h"
-//TODO: Implementare Exceptions
-//TODO: implementare handlers e logica backend
 
 #include <thread>
 #include <vector>
@@ -41,7 +39,6 @@ int main() {
         SocketTcp serverSocket;
         serverSocket.initializeServer(serverPort);
         std::cout << "Server socket initialized on port " << serverPort << std::endl;
-        //TODO: Implementare connessione a MongoDB
         serverSocket.connect_to_mongodb(host, port, database, username, password);
         std::cout << "Server connesso al db: " << database << ", host: " << host << ", port: " << port << "\n";
         serverSocket.listenForConnections();
@@ -54,13 +51,11 @@ int main() {
             if (clientSocket != INVALID_SOCKET) {
                 std::cout << "New client connected." << std::endl;
 
-                // Crea un thread separato per gestire il client
-                //TODO: Implementare logica dell'handler
-                //TODO: Implementare le exceptions dell'handler
+                // Creazione di un thread separato per gestire il client
                 clientThreads.emplace_back(handler::handleClient, std::ref(serverSocket), clientSocket);
             }
             else {
-                std::cerr << "Failed to accept client connection." << std::endl;
+                throw SocketException("Failed to accept client connection.");
             }
         }
 

@@ -1,5 +1,6 @@
 package main
 
+//TODO: Sistemare ricezione token dagli headers
 // TODO: Implementare endpoints per recommendations
 
 import (

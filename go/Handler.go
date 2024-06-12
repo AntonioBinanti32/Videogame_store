@@ -1,5 +1,6 @@
 package main
 
+// TODO: Implementare token
 // TODO: Implementare accesso esclusivo ad admin per alcune operazioni
 // TODO: Implementare logica delle notifiche
 // TODO: Implementare handler per recommendations
@@ -91,7 +92,10 @@ func AddGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string
 		return
 	}
 
-	message := "addGame/" + req.Title + "/" + req.Genre + "/" + req.ReleaseDate + "/" + req.Developer + "/" + fmt.Sprintf("%f", req.Price) + "/" + fmt.Sprintf("%d", req.Stock) + "/" + req.Description + "/" + req.ImageUrl + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "addGame/" + req.Title + "/" + req.Genre + "/" + req.ReleaseDate + "/" + req.Developer + "/" + fmt.Sprintf("%f", req.Price) + "/" + fmt.Sprintf("%d", req.Stock) + "/" + req.Description + "/" + req.ImageUrl + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -104,7 +108,11 @@ func AddGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string
 }
 
 func GetGamesHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
-	message := "getGames/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getGames/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -117,7 +125,11 @@ func GetGamesHandler(w http.ResponseWriter, r *http.Request, socketTCPPort strin
 }
 
 func GetGameByTitleHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, gameTitle string) {
-	message := "getGameByTitle/" + gameTitle + "/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getGameByTitle/" + gameTitle + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -130,7 +142,11 @@ func GetGameByTitleHandler(w http.ResponseWriter, r *http.Request, socketTCPPort
 }
 
 func GetReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, reviewID string) {
-	message := "getReview/" + reviewID + "/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getReview/" + reviewID + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -143,7 +159,11 @@ func GetReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort stri
 }
 
 func GetReviewByUserHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, username string) {
-	message := "getReviewByUser/" + username + "/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getReviewByUser/" + username + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -156,7 +176,11 @@ func GetReviewByUserHandler(w http.ResponseWriter, r *http.Request, socketTCPPor
 }
 
 func GetReviewByGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, gameTitle string) {
-	message := "getReviewByGame/" + gameTitle + "/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getReviewByGame/" + gameTitle + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -176,7 +200,10 @@ func AddReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort stri
 		return
 	}
 
-	message := "addReview/" + req.Username + "/" + req.GameTitle + "/" + req.ReviewText + "/" + strconv.Itoa(req.Rating) + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "addReview/" + req.Username + "/" + req.GameTitle + "/" + req.ReviewText + "/" + strconv.Itoa(req.Rating) + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -196,7 +223,10 @@ func AddReservationHandler(w http.ResponseWriter, r *http.Request, socketTCPPort
 		return
 	}
 
-	message := "addReservation/" + req.Username + "/" + req.GameID + "/" + strconv.Itoa(req.NumCopies) + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "addReservation/" + req.Username + "/" + req.GameID + "/" + strconv.Itoa(req.NumCopies) + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -216,7 +246,10 @@ func AddPurchaseHandler(w http.ResponseWriter, r *http.Request, socketTCPPort st
 		return
 	}
 
-	message := "addPurchase/" + req.Username + "/" + req.GameTitle + "/" + strconv.Itoa(req.NumCopies) + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "addPurchase/" + req.Username + "/" + req.GameTitle + "/" + strconv.Itoa(req.NumCopies) + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -229,7 +262,11 @@ func AddPurchaseHandler(w http.ResponseWriter, r *http.Request, socketTCPPort st
 }
 
 func GetReservationsHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, username string) {
-	message := "getReservations/" + username + "/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getReservations/" + username + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -242,7 +279,11 @@ func GetReservationsHandler(w http.ResponseWriter, r *http.Request, socketTCPPor
 }
 
 func GetPurchasesHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, username string) {
-	message := "getPurchases/" + username + "/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getPurchases/" + username + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -262,7 +303,10 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request, socketTCPPort str
 		return
 	}
 
-	message := "updateUser/" + req.Username + "/" + req.NewPassword + "/" + req.NewImageUrl + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "updateUser/" + req.Username + "/" + req.NewPassword + "/" + req.NewImageUrl + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -282,7 +326,10 @@ func UpdateGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort str
 		return
 	}
 
-	message := "updateGame/" + req.Title + "/" + req.NewGenre + "/" + req.NewReleaseDate + "/" + req.NewDeveloper + "/" + fmt.Sprintf("%f", req.NewPrice) + "/" + strconv.Itoa(req.NewStock) + "/" + req.NewDescription + "/" + req.NewImageUrl + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "updateGame/" + req.Title + "/" + req.NewGenre + "/" + req.NewReleaseDate + "/" + req.NewDeveloper + "/" + fmt.Sprintf("%f", req.NewPrice) + "/" + strconv.Itoa(req.NewStock) + "/" + req.NewDescription + "/" + req.NewImageUrl + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -302,7 +349,10 @@ func UpdateReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort s
 		return
 	}
 
-	message := "updateReview/" + req.Username + "/" + req.GameTitle + "/" + req.NewReviewText + "/" + strconv.Itoa(req.NewRating) + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "updateReview/" + req.Username + "/" + req.GameTitle + "/" + req.NewReviewText + "/" + strconv.Itoa(req.NewRating) + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -322,7 +372,10 @@ func UpdateReservationHandler(w http.ResponseWriter, r *http.Request, socketTCPP
 		return
 	}
 
-	message := "updateReservation/" + req.Username + "/" + req.GameTitle + "/" + strconv.Itoa(req.NewNumCopies) + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "updateReservation/" + req.Username + "/" + req.GameTitle + "/" + strconv.Itoa(req.NewNumCopies) + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -342,7 +395,10 @@ func UpdatePurchaseHandler(w http.ResponseWriter, r *http.Request, socketTCPPort
 		return
 	}
 
-	message := "updatePurchase/" + req.Username + "/" + req.GameTitle + "/" + strconv.Itoa(req.NewNumCopies) + "/" + req.PurchaseID + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "updatePurchase/" + req.Username + "/" + req.GameTitle + "/" + strconv.Itoa(req.NewNumCopies) + "/" + req.PurchaseID + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -355,7 +411,11 @@ func UpdatePurchaseHandler(w http.ResponseWriter, r *http.Request, socketTCPPort
 }
 
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, username string) {
-	message := "deleteUser/" + username + "/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "deleteUser/" + username + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -368,7 +428,11 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request, socketTCPPort str
 }
 
 func DeleteGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, gameTitle string) {
-	message := "deleteGame/" + gameTitle + "/"
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "deleteGame/" + gameTitle + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -388,7 +452,10 @@ func DeleteReservationHandler(w http.ResponseWriter, r *http.Request, socketTCPP
 		return
 	}
 
-	message := "deleteReservation/" + req.Username + "/" + req.GameTitle + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "deleteReservation/" + req.Username + "/" + req.GameTitle + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -408,7 +475,10 @@ func DeletePurchaseHandler(w http.ResponseWriter, r *http.Request, socketTCPPort
 		return
 	}
 
-	message := "deletePurchase/" + req.Username + "/" + req.GameTitle + "/" + req.PurchaseID + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "deletePurchase/" + req.Username + "/" + req.GameTitle + "/" + req.PurchaseID + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -428,7 +498,10 @@ func DeleteReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort s
 		return
 	}
 
-	message := "deleteReview/" + req.Username + "/" + req.GameTitle + "/"
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "deleteReview/" + req.Username + "/" + req.GameTitle + "/" + actualUser + "/" + token + "/"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {

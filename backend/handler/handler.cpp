@@ -20,19 +20,19 @@ namespace handler {
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const LoginException& e) {
-                std::string error = "Login failed: " + std::string(e.what());
+                std::string error = generateJson("", "Login failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Login failed: " + std::string(e.what());
+                std::string error = generateJson("", "Login failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid login format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string error = generateJson("", "Invalid format");
+            serverSocket.sendMessage(error.c_str(), clientSocket);
             return;
         }
     }
@@ -53,19 +53,19 @@ namespace handler {
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const SignupException& e) {
-                std::string error = "Signup failed: " + std::string(e.what());
+                std::string error = generateJson("", "Signup failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Signup failed: " + std::string(e.what());
+                std::string error = generateJson("", "Signup failed: " + std::string(e.what()));
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid signup format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string error = generateJson("", "Invalid signup format");
+            serverSocket.sendMessage(error.c_str(), clientSocket);
             return;
         }
     }

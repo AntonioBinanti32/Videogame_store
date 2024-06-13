@@ -37,6 +37,9 @@ target_link_libraries(Videogame_store PRIVATE nlohmann_json::nlohmann_json)
 find_package(cpp-jwt CONFIG REQUIRED) #Documentation: https://github.com/arun11299/cpp-jwt
 target_link_libraries(Videogame_store PRIVATE cpp-jwt::cpp-jwt)
 
+find_package(boost_url REQUIRED CONFIG) #Documentation: https://github.com/boostorg/url?tab=readme-ov-file
+target_link_libraries(Videogame_store PRIVATE Boost::url)
+
 if(WIN32)
   target_link_libraries(Videogame_store PRIVATE wsock32 ws2_32)
 endif()

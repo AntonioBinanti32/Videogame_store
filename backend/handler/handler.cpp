@@ -1,7 +1,9 @@
 #include "Handler.h"
 #include <iostream>
 #include <sstream>
+#include <boost/url.hpp>
 
+// TODO: Implementare Boost-url
 // TODO: Implemendare sistema di raccomandazioni
 // TODO: Inserire admin nella verifica token delle funzioni di gestione importanti
 
@@ -10,7 +12,7 @@ namespace handler {
     void handleLogin(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, password;
-        if (std::getline(iss, username, '/') && std::getline(iss, password, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, password, '*')) {
             try {
                 MongoDB* mongoDb = MongoDB::getInstance();
                 mongoDb->login(username, password);
@@ -40,7 +42,7 @@ namespace handler {
     void handleSignup(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, password, imageUrl;
-        if (std::getline(iss, username, '/') && std::getline(iss, password, '/') && std::getline(iss, imageUrl, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, password, '*') && std::getline(iss, imageUrl, '*')) {
             try {
                 if (imageUrl.empty()) {
                     imageUrl = "https://example.com/default_image.png"; //TODO: Cambiare immagine facoltativa
@@ -73,10 +75,10 @@ namespace handler {
     void handleAddGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actualUser, token;
-        if (std::getline(iss, title, '/') && std::getline(iss, genre, '/') && std::getline(iss, release_date, '/') &&
-            std::getline(iss, developer, '/') && std::getline(iss, price_str, '/') && std::getline(iss, stock_str, '/') &&
-            std::getline(iss, description, '/') && std::getline(iss, imageUrl, '/') 
-            && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, title, '*') && std::getline(iss, genre, '*') && std::getline(iss, release_date, '*') &&
+            std::getline(iss, developer, '*') && std::getline(iss, price_str, '*') && std::getline(iss, stock_str, '*') &&
+            std::getline(iss, description, '*') && std::getline(iss, imageUrl, '*') 
+            && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 double price = std::stod(price_str);
@@ -122,7 +124,7 @@ namespace handler {
     void handleGetGames(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string actualUser, token;
-        if (std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -162,7 +164,7 @@ namespace handler {
     void handleGetGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string game_id, actualUser, token;
-        if (std::getline(iss, game_id, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, game_id, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -202,7 +204,7 @@ namespace handler {
     void handleGetGameByTitle(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string title, actualUser, token;
-        if (std::getline(iss, title, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, title, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -242,7 +244,7 @@ namespace handler {
     void handleGetReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string review_id, actualUser, token;
-        if (std::getline(iss, review_id, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, review_id, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -282,7 +284,7 @@ namespace handler {
     void handleGetReviewByUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string user, actualUser, token;
-        if (std::getline(iss, user, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, user, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -327,7 +329,7 @@ namespace handler {
     void handleGetReviewByGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string game_title, actualUser, token;
-        if (std::getline(iss, game_title, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, game_title, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -372,9 +374,9 @@ namespace handler {
     void handleAddReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, review_text, rating_str, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
-            std::getline(iss, review_text, '/') && std::getline(iss, rating_str, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') &&
+            std::getline(iss, review_text, '*') && std::getline(iss, rating_str, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 int rating = std::stoi(rating_str);
@@ -426,8 +428,8 @@ namespace handler {
     void handleAddReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, num_copies_str, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, num_copies_str, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') && std::getline(iss, num_copies_str, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 int num_copies = std::stoi(num_copies_str);
                 if (verifyToken(token, actualUser)) {
@@ -480,8 +482,8 @@ namespace handler {
     void handleAddPurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, num_copies_str, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, num_copies_str, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') && std::getline(iss, num_copies_str, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 int num_copies = std::stoi(num_copies_str);
                 if (verifyToken(token, actualUser)) {
@@ -539,7 +541,7 @@ namespace handler {
     void handleGetReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -584,7 +586,7 @@ namespace handler {
     void handleGetPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -632,7 +634,7 @@ namespace handler {
     void handleGetRecommendations(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username;
-        if (std::getline(iss, username, '/')) {
+        if (std::getline(iss, username, '*')) {
             try {
                 //std::vector<bsoncxx::document::value> recommendations = getRecommendations(username);
                 std::string response = "Recommendations:";  // Convert recommendations to string
@@ -654,8 +656,8 @@ namespace handler {
     void handleUpdateUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, password, imageUrl, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, password, '/') && std::getline(iss, imageUrl, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, password, '*') && std::getline(iss, imageUrl, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -701,10 +703,10 @@ namespace handler {
     void handleUpdateGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actualUser, token;
-        if (std::getline(iss, title, '/') && std::getline(iss, genre, '/') && std::getline(iss, release_date, '/') &&
-            std::getline(iss, developer, '/') && std::getline(iss, price_str, '/') && std::getline(iss, stock_str, '/') &&
-            std::getline(iss, description, '/') && std::getline(iss, imageUrl, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, title, '*') && std::getline(iss, genre, '*') && std::getline(iss, release_date, '*') &&
+            std::getline(iss, developer, '*') && std::getline(iss, price_str, '*') && std::getline(iss, stock_str, '*') &&
+            std::getline(iss, description, '*') && std::getline(iss, imageUrl, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 double price = std::stod(price_str);
@@ -753,8 +755,8 @@ namespace handler {
     void handleUpdateReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, newNumCopies_str, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') && std::getline(iss, newNumCopies_str, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     int newNumCopies = std::stoi(newNumCopies_str);
@@ -800,8 +802,8 @@ namespace handler {
     void handleUpdatePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, newNumCopies_str, purchase_id, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') && std::getline(iss, newNumCopies_str, '/') &&
-            std::getline(iss, purchase_id, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') && std::getline(iss, newNumCopies_str, '*') &&
+            std::getline(iss, purchase_id, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     int newNumCopies = std::stoi(newNumCopies_str);
@@ -853,9 +855,9 @@ namespace handler {
     void handleUpdateReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, newReviewText, newRating_str, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
-            std::getline(iss, newReviewText, '/') && std::getline(iss, newRating_str, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') &&
+            std::getline(iss, newReviewText, '*') && std::getline(iss, newRating_str, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 if (verifyToken(token, actualUser)) {
@@ -902,7 +904,7 @@ namespace handler {
     void handleDeleteUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -937,7 +939,7 @@ namespace handler {
     void handleDeleteGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string game_title, actualUser, token;
-        if (std::getline(iss, game_title, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, game_title, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -972,8 +974,8 @@ namespace handler {
     void handleDeleteReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 if (verifyToken(token, actualUser)) {
@@ -1009,8 +1011,8 @@ namespace handler {
     void handleDeletePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, purchase_id, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
-            std::getline(iss, purchase_id, '/') && std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') &&
+            std::getline(iss, purchase_id, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 if (verifyToken(token, actualUser)) {
@@ -1047,8 +1049,8 @@ namespace handler {
     void handleDeleteReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, actualUser, token;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/') &&
-            std::getline(iss, actualUser, '/') && std::getline(iss, token, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') &&
+            std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 if (verifyToken(token, actualUser)) {
@@ -1096,7 +1098,7 @@ namespace handler {
     void handleDeleteRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title;
-        if (std::getline(iss, username, '/') && std::getline(iss, game_title, '/')) {
+        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*')) {
             try {
                 MongoDB* mongoDb = MongoDB::getInstance();
                 mongoDb->deleteReview(username, game_title);
@@ -1204,6 +1206,14 @@ namespace handler {
         }
     }
 
+    std::string urlDecode(const std::string& SRC) {
+        boost::core::string_view s = SRC;
+        boost::system::result<boost::urls::url_view> r = boost::urls::parse_uri(s);
+        boost::urls::url_view u = r.value();
+        std::string urlString(u.data(), u.size());
+        return urlString;
+    }
+
 
 
     void handleClient(SocketTcp& serverSocket, SOCKET clientSocket) {
@@ -1225,86 +1235,86 @@ namespace handler {
                     message.erase(std::remove(message.begin(), message.end(), '\r'), message.end());
 
                     // Controllo messaggi
-                    if (message.rfind("login/", 0) == 0) {
+                    if (message.rfind("login*", 0) == 0) {
                         handleLogin(message.substr(6), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("signup/", 0) == 0) {
+                    else if (message.rfind("signup*", 0) == 0) {
                         handleSignup(message.substr(7), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("addGame/", 0) == 0) {
+                    else if (message.rfind("addGame*", 0) == 0) {
                         handleAddGame(message.substr(8), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getGames/", 0) == 0) {
+                    else if (message.rfind("getGames*", 0) == 0) {
                         handleGetGames(message.substr(9), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getGame/", 0) == 0) {
+                    else if (message.rfind("getGame*", 0) == 0) {
                         handleGetGame(message.substr(8), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getGameByTitle/", 0) == 0) {
+                    else if (message.rfind("getGameByTitle*", 0) == 0) {
                         handleGetGameByTitle(message.substr(15), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getReview/", 0) == 0) {
+                    else if (message.rfind("getReview*", 0) == 0) {
                         handleGetReview(message.substr(10), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getReviewByUser/", 0) == 0) {
+                    else if (message.rfind("getReviewByUser*", 0) == 0) {
                         handleGetReviewByUser(message.substr(16), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getReviewByGame/", 0) == 0) {
+                    else if (message.rfind("getReviewByGame*", 0) == 0) {
                         handleGetReviewByGame(message.substr(16), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("addReview/", 0) == 0) {
+                    else if (message.rfind("addReview*", 0) == 0) {
                         handleAddReview(message.substr(10), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("addReservation/", 0) == 0) {
+                    else if (message.rfind("addReservation*", 0) == 0) {
                         handleAddReservation(message.substr(15), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("addPurchase/", 0) == 0) {
+                    else if (message.rfind("addPurchase*", 0) == 0) {
                         handleAddPurchase(message.substr(12), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getReservations/", 0) == 0) {
+                    else if (message.rfind("getReservations*", 0) == 0) {
                         handleGetReservation(message.substr(16), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("getPurchases/", 0) == 0) {
+                    else if (message.rfind("getPurchases*", 0) == 0) {
                         handleGetPurchases(message.substr(13), serverSocket, clientSocket);
                     }
                     /*
-                    else if (message.rfind("getRecommendations/", 0) == 0) {
+                    else if (message.rfind("getRecommendations*", 0) == 0) {
                         handleGetRecommendations(message.substr(19), serverSocket, clientSocket);
                     }*/
-                    else if (message.rfind("updateUser/", 0) == 0) {
+                    else if (message.rfind("updateUser*", 0) == 0) {
                         handleUpdateUser(message.substr(11), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("updateGame/", 0) == 0) {
+                    else if (message.rfind("updateGame*", 0) == 0) {
                         handleUpdateGame(message.substr(11), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("updateReservation/", 0) == 0) {
+                    else if (message.rfind("updateReservation*", 0) == 0) {
                         handleUpdateReservation(message.substr(18), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("updatePurchase/", 0) == 0) {
+                    else if (message.rfind("updatePurchase*", 0) == 0) {
                         handleUpdatePurchase(message.substr(15), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("updateReview/", 0) == 0) {
+                    else if (message.rfind("updateReview*", 0) == 0) {
                         handleUpdateReview(message.substr(13), serverSocket, clientSocket);
                     }/*
-                    else if (message.rfind("updateRecommendation/", 0) == 0) {
+                    else if (message.rfind("updateRecommendation*", 0) == 0) {
                         handleUpdateRecommendation(message.substr(20), serverSocket, clientSocket);
                     }*/
-                    else if (message.rfind("deleteUser/", 0) == 0) {
+                    else if (message.rfind("deleteUser*", 0) == 0) {
                         handleDeleteUser(message.substr(11), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("deleteGame/", 0) == 0) {
+                    else if (message.rfind("deleteGame*", 0) == 0) {
                         handleDeleteGame(message.substr(11), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("deleteReservation/", 0) == 0) {
+                    else if (message.rfind("deleteReservation*", 0) == 0) {
                         handleDeleteReservation(message.substr(18), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("deletePurchase/", 0) == 0) {
+                    else if (message.rfind("deletePurchase*", 0) == 0) {
                         handleDeletePurchase(message.substr(15), serverSocket, clientSocket);
                     }
-                    else if (message.rfind("deleteReview/", 0) == 0) {
+                    else if (message.rfind("deleteReview*", 0) == 0) {
                         handleDeleteReview(message.substr(13), serverSocket, clientSocket);
                     }/*
-                    else if (message.rfind("deleteRecommendation/", 0) == 0) {
+                    else if (message.rfind("deleteRecommendation*", 0) == 0) {
                         handleDeleteRecommendation(message.substr(20), serverSocket, clientSocket);
                     }*/
                     else if (message == "exit") {

@@ -1,8 +1,12 @@
 package main
 
+type ResponseToken struct {
+	Message string `json:"message"`
+	Token   string `json:"token"`
+}
+
 type Response struct {
-	Message interface{} `json:"message"`
-	Token   string      `json:"token"`
+	Message string `json:"message"`
 }
 
 type SignupRequest struct {
@@ -36,7 +40,7 @@ type AddReviewRequest struct {
 
 type AddReservationRequest struct {
 	Username  string `json:"username"`
-	GameID    string `json:"gameID"`
+	GameTitle string `json:"gameTitle"`
 	NumCopies int    `json:"numCopies"`
 }
 
@@ -77,8 +81,6 @@ type UpdateReservationRequest struct {
 }
 
 type UpdatePurchaseRequest struct {
-	Username     string `json:"username"`
-	GameTitle    string `json:"gameTitle"`
 	NewNumCopies int    `json:"newNumCopies"`
 	PurchaseID   string `json:"purchaseID"`
 }

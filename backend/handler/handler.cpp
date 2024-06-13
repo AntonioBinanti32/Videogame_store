@@ -802,7 +802,7 @@ namespace handler {
     void handleUpdatePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, newNumCopies_str, purchase_id, actualUser, token;
-        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') && std::getline(iss, newNumCopies_str, '*') &&
+        if (std::getline(iss, newNumCopies_str, '*') &&
             std::getline(iss, purchase_id, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
                 if (verifyToken(token, actualUser)) {
@@ -814,7 +814,7 @@ namespace handler {
                     }
                     MongoDB* mongoDb = MongoDB::getInstance();
                     // Aggiorna l'acquisto
-                    mongoDb->updatePurchase(username, game_title, newNumCopies, purchase_id);
+                    mongoDb->updatePurchase(newNumCopies, purchase_id);
                     std::string response = generateJson("", "Purchase updated successfully");
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
@@ -973,14 +973,14 @@ namespace handler {
 
     void handleDeleteReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title, actualUser, token;
-        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') &&
+        std::string reservationId, actualUser, token;
+        if (std::getline(iss, reservationId, '*') &&
             std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
-                    mongoDb->deleteReservation(username, game_title);
+                    mongoDb->deleteReservation(reservationId);
                     std::string response = generateJson("", "Reservation deleted successfully");
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
@@ -1008,17 +1008,18 @@ namespace handler {
         }
     }
 
+    //TODO: Sistemare con solo l'id
+
     void handleDeletePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, game_title, purchase_id, actualUser, token;
-        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*') &&
-            std::getline(iss, purchase_id, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
+        if (std::getline(iss, purchase_id, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
 
             try {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
                     // Elimina l'acquisto
-                    mongoDb->deletePurchase(username, game_title, purchase_id);
+                    mongoDb->deletePurchase(purchase_id);
                     std::string response = generateJson("", "Purchase deleted successfully");
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
@@ -1163,7 +1164,7 @@ namespace handler {
             return false;
         }
         else if (reserved < num_copies_purchased) {
-            mongoDb->deleteReservation(username, game_title);
+            mongoDb->deleteReservation(reservations["_id"]);
         }
         else {
             int reserved_new = reserved - num_copies_purchased;

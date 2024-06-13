@@ -112,11 +112,15 @@ func main() {
 		gameTitle := params["gameTitle"]
 		DeleteGameHandler(w, r, socketTCPPort, gameTitle)
 	}).Methods("DELETE")
-	r.HandleFunc("/deleteReservation", func(w http.ResponseWriter, r *http.Request) {
-		DeleteReservationHandler(w, r, socketTCPPort)
+	r.HandleFunc("/deleteReservation/{reservationId}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		reservationId := params["reservationId"]
+		DeleteReservationHandler(w, r, socketTCPPort, reservationId)
 	}).Methods("DELETE")
-	r.HandleFunc("/deletePurchase", func(w http.ResponseWriter, r *http.Request) {
-		DeletePurchaseHandler(w, r, socketTCPPort)
+	r.HandleFunc("/deletePurchase/{purchaseId}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		purchaseId := params["purchaseId"]
+		DeletePurchaseHandler(w, r, socketTCPPort, purchaseId)
 	}).Methods("DELETE")
 	r.HandleFunc("/deleteReview", func(w http.ResponseWriter, r *http.Request) {
 		DeleteReviewHandler(w, r, socketTCPPort)

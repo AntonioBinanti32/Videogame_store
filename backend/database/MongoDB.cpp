@@ -681,7 +681,7 @@ void MongoDB::updateReservation(const std::string& username, const std::string& 
     }
 }
 
-void MongoDB::updatePurchase(const std::string& username, const std::string& game_title, int newNumCopies, const std::string& purchase_id) noexcept(false) {
+void MongoDB::updatePurchase(int newNumCopies, const std::string& purchase_id) noexcept(false) {
     try {
         auto query = bsoncxx::builder::basic::make_document(
             //bsoncxx::builder::basic::kvp("username", username),
@@ -711,7 +711,7 @@ void MongoDB::updatePurchase(const std::string& username, const std::string& gam
             bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
         );
 
-        auto update_result = reservationCollection.update_one(
+        auto update_result = purchaseCollection.update_one(
             update_res.view(),
             bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("$set", bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("num_copies", newNumCopies))))
         );
@@ -816,13 +816,12 @@ void MongoDB::deleteGame(const std::string& game_title) noexcept(false) {
         throw;
     }
 }
-
-void MongoDB::deleteReservation(const std::string& username, const std::string& game_title) noexcept(false) {
+/*
+void MongoDB::deleteReservation(const std::string& reservationId) noexcept(false) {
     try {
         // Costruzione del filtro per la prenotazione da eliminare
         auto filter = bsoncxx::builder::basic::make_document(
-            bsoncxx::builder::basic::kvp("username", username),
-            bsoncxx::builder::basic::kvp("game_title", game_title)
+            bsoncxx::builder::basic::kvp("_id", reservationId)
         );
 
         // Eliminazione della prenotazione dalla collezione reservationCollection
@@ -860,30 +859,33 @@ void MongoDB::deleteReservation(const std::string& username, const std::string& 
     catch (const std::exception& e) {
         throw;
     }
-}
+}*/
 
-void MongoDB::deletePurchase(const std::string& username, const std::string& game_title, const std::string& purchase_id) noexcept(false) {
+void MongoDB::deleteReservation(const std::string& reservationId) noexcept(false) {
     try {
-        // Costruzione del filtro per il purchase da eliminare
+        // Costruzione del filtro per la prenotazione da eliminare
         auto filter = bsoncxx::builder::basic::make_document(
-            //bsoncxx::builder::basic::kvp("username", username),
-            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
+            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(reservationId))
         );
 
-        // Eliminazione del purchase dalla collezione purchases
-        auto result = purchaseCollection.delete_one(filter.view());
-
-        if (result) {
-            if (result->deleted_count() == 0) {
-                // Nessun purchase corrispondente è stato trovato
-                throw PurchaseException("Purchase non trovato");
-            }
-        }
-        else {
-            throw PurchaseException("Errore durante l'eliminazione del purchase");
+        // Trova la prenotazione specifica per ottenere username e game_title
+        auto reservation = reservationCollection.find_one(filter.view());
+        if (!reservation) {
+            throw ReservationException("Prenotazione non trovata");
         }
 
-        // Aggiornamento della userCollection per eliminare il purchase dall'array "purchases"
+        // Estrazione di username e game_title dalla prenotazione trovata
+        auto reservationView = reservation->view();
+        std::string username = reservationView["username"].get_utf8().value.to_string();
+        std::string game_title = reservationView["game_title"].get_utf8().value.to_string();
+
+        // Eliminazione della prenotazione dalla collezione reservationCollection
+        auto result = reservationCollection.delete_one(filter.view());
+        if (!result || result->deleted_count() == 0) {
+            throw ReservationException("Errore durante l'eliminazione della prenotazione");
+        }
+
+        // Aggiornamento della userCollection per eliminare la prenotazione dall'array "reservations"
         userCollection.update_one(
             bsoncxx::builder::basic::make_document(
                 bsoncxx::builder::basic::kvp("username", username)
@@ -891,9 +893,11 @@ void MongoDB::deletePurchase(const std::string& username, const std::string& gam
             bsoncxx::builder::basic::make_document(
                 bsoncxx::builder::basic::kvp("$pull",
                     bsoncxx::builder::basic::make_document(
-                        bsoncxx::builder::basic::kvp("purchases", bsoncxx::builder::basic::make_document(
-                            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
-                        ))
+                        bsoncxx::builder::basic::kvp("reservations",
+                            bsoncxx::builder::basic::make_document(
+                                bsoncxx::builder::basic::kvp("game_title", game_title)
+                            )
+                        )
                     )
                 )
             )
@@ -906,6 +910,57 @@ void MongoDB::deletePurchase(const std::string& username, const std::string& gam
         throw;
     }
 }
+
+void MongoDB::deletePurchase(const std::string& purchase_id) noexcept(false) {
+    try {
+        // Costruzione del filtro per il purchase da eliminare
+        auto filter = bsoncxx::builder::basic::make_document(
+            bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
+        );
+
+        // Trova il purchase specifico per ottenere username e game_title
+        auto purchase = purchaseCollection.find_one(filter.view());
+        if (!purchase) {
+            throw PurchaseException("Purchase non trovato");
+        }
+
+        // Estrazione di username e game_title dal purchase trovato
+        auto purchaseView = purchase->view();
+        std::string username = purchaseView["username"].get_utf8().value.to_string();
+        std::string game_title = purchaseView["game_title"].get_utf8().value.to_string();
+
+        // Eliminazione del purchase dalla collezione purchaseCollection
+        auto result = purchaseCollection.delete_one(filter.view());
+        if (!result || result->deleted_count() == 0) {
+            throw PurchaseException("Errore durante l'eliminazione del purchase");
+        }
+
+        // Aggiornamento della userCollection per eliminare il purchase dall'array "purchases"
+        userCollection.update_one(
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("username", username)
+            ),
+            bsoncxx::builder::basic::make_document(
+                bsoncxx::builder::basic::kvp("$pull",
+                    bsoncxx::builder::basic::make_document(
+                        bsoncxx::builder::basic::kvp("purchases",
+                            bsoncxx::builder::basic::make_document(
+                                bsoncxx::builder::basic::kvp("_id", bsoncxx::oid(purchase_id))
+                            )
+                        )
+                    )
+                )
+            )
+        );
+    }
+    catch (const mongocxx::exception& e) {
+        throw;
+    }
+    catch (const std::exception& e) {
+        throw;
+    }
+}
+
 
 void MongoDB::deleteReview(const std::string& username, const std::string& game_title) noexcept(false) {
     try {

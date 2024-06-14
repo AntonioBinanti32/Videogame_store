@@ -1,22 +1,56 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import requests
+import configparser
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Cambia con una chiave segreta sicura
+app.secret_key = 'your_secret_key'
 
-backend_url = 'http://localhost:5000'  # Sostituisci con l'URL del tuo backend Go
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+backend_url = config.get('backend', 'backend_url')
+
+
+def is_user_logged_in():
+    return 'user' in session
+
+def getHeaders():
+    user = session.get('user')
+    token = session.get('token')
+
+    headers = {
+        'Token': token,
+        'ActualUser': user
+    }
+
+    return headers
+
 
 @app.route('/')
 def home():
-    response = requests.get(f'{backend_url}/getGames')
-    games = response.json()
-    return render_template('home.html', games=games)
+    try:
+        if not is_user_logged_in():
+            return redirect(url_for('login'))
+
+        response = requests.get(f'{backend_url}/getGames', headers = getHeaders()) #TODO: inserire user e token per validazione
+        games = response.json()
+        return render_template('home.html', games=games)
+    except requests.exceptions.HTTPError as http_err:
+        flash('Login failed: invalid credentials')
+    except requests.exceptions.ConnectionError as conn_err:
+        flash('Connection error: please try again later')
+    except requests.exceptions.Timeout as timeout_err:
+        flash('Request timed out: please try again later')
+    except requests.exceptions.RequestException as req_err:
+        flash('An unexpected error occurred: please try again later')
+    return redirect(url_for('login'))
 
 @app.route('/game/<string:gameTitle>')
 def game(gameTitle):
     response = requests.get(f'{backend_url}/getGameByTitle/{gameTitle}')
     game = response.json()
     return render_template('game.html', game=game)
+
 
 @app.route('/cart')
 def cart():
@@ -25,6 +59,7 @@ def cart():
     cart_items = session['cart']
     return render_template('cart.html', cart_items=cart_items)
 
+
 @app.route('/add_to_cart/<string:gameTitle>')
 def add_to_cart(gameTitle):
     if 'cart' not in session:
@@ -32,18 +67,28 @@ def add_to_cart(gameTitle):
     session['cart'].append(gameTitle)
     return redirect(url_for('cart'))
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         credentials = request.form
-        response = requests.post(f'{backend_url}/login', json=credentials)
-        if response.status_code == 200:
+        try:
+            response = requests.post(f'{backend_url}/login', json=credentials)
+            response.raise_for_status()  # Questo genera un'eccezione per codici di stato HTTP 4xx/5xx
             session['user'] = response.json()['user']
+            session['token'] = response.json()['token']
             return redirect(url_for('home'))
-        else:
-            flash('Login Failed')
-            return redirect(url_for('login'))
+        except requests.exceptions.HTTPError as http_err:
+            flash('Login failed: invalid credentials')
+        except requests.exceptions.ConnectionError as conn_err:
+            flash('Connection error: please try again later')
+        except requests.exceptions.Timeout as timeout_err:
+            flash('Request timed out: please try again later')
+        except requests.exceptions.RequestException as req_err:
+            flash('An unexpected error occurred: please try again later')
+        return redirect(url_for('login'))
     return render_template('login.html')
+
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -57,6 +102,7 @@ def signup():
             return redirect(url_for('signup'))
     return render_template('signup.html')
 
+
 @app.route('/reviews/<string:gameTitle>', methods=['GET', 'POST'])
 def reviews(gameTitle):
     if request.method == 'POST':
@@ -69,10 +115,12 @@ def reviews(gameTitle):
         reviews = response.json()
         return render_template('reviews.html', reviews=reviews, gameTitle=gameTitle)
 
+
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect(url_for('home'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

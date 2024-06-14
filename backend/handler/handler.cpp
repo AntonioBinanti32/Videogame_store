@@ -18,22 +18,22 @@ namespace handler {
                 mongoDb->login(username, password);
                 std::string token = generateJwtToken(username);
                 //Incapsulamento in un json
-                std::string response = generateJson(token, "Login successfully");
+                std::string response = generateJson(token, "Login successfully", false, username);
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const LoginException& e) {
-                std::string error = generateJson("", "Login failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Login failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Login failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Login failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string error = generateJson("", "Invalid format");
+            std::string error = generateJson("", "Invalid format", true);
             serverSocket.sendMessage(error.c_str(), clientSocket);
             return;
         }
@@ -51,7 +51,7 @@ namespace handler {
                 mongoDb->signup(username, password,imageUrl);
                 std::string token = generateJwtToken(username);
                 //Incapsulamento in un json
-                std::string response = generateJson(token, "Signup successfully");
+                std::string response = generateJson(token, "Signup successfully", false, username);
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const SignupException& e) {
@@ -1181,15 +1181,24 @@ namespace handler {
         return obj.signature();
     }
 
-    std::string generateJson(const std::string& token, const std::string& message) {
+    std::string generateJson(const std::string& token, const std::string& message, bool isError, const std::string& user) {
         nlohmann::json response;
         response["message"] = message;
+        response["error"] = isError;
         if (token != "") {
             response["token"] = token;
+        }
+        if (!user.empty()) {
+            response["user"] = user;
         }
         
         return response.dump();
     }
+
+    // Sovraccarico della funzione per accettare solo il token, il messaggio e isError
+    /*std::string generateJson(const std::string& token, const std::string& message, bool isError) {
+        return generateJson(token, message, "", isError);
+    }*/
 
     bool verifyToken(const std::string& token, const std::string& username) {
         try {

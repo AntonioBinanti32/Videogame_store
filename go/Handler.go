@@ -78,6 +78,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) 
 		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", err), http.StatusInternalServerError)
 		return
 	}
+	if jsonResponse.Message != "Login successfully" {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
+		return
+	}
 	fmt.Printf("%v", jsonResponse)
 	// Risposta al client HTTP
 	w.Header().Set("Content-Type", "application/json")

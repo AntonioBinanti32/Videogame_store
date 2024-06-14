@@ -41,7 +41,8 @@ namespace handler {
     bool isGameAvailableForPurchase(const std::string& game_title, int num_copies_to_purchase);
     bool removeReservationsForGame(const std::string& username, const std::string& game_title, int num_copies);
     std::string generateJwtToken(const std::string& username);
-    std::string generateJson(const std::string& token, const std::string& message);
+    std::string generateJson(const std::string& token, const std::string& message, bool isError = false, const std::string& user = "");
+    //std::string generateJson(const std::string& token, const std::string& message, bool isError = false);
     bool verifyToken(const std::string& token, const std::string& username);
     string urlDecode(const string& SRC);
 };

@@ -3,10 +3,13 @@ package main
 type ResponseToken struct {
 	Message string `json:"message"`
 	Token   string `json:"token"`
+	Error   bool   `json:"error"`
+	User    string `json:"user"`
 }
 
 type Response struct {
 	Message string `json:"message"`
+	Error   bool   `json:"error"`
 }
 
 type SignupRequest struct {

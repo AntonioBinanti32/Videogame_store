@@ -1,0 +1,213 @@
+/* Reset dei margini e padding per tutti gli elementi */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Stile del corpo della pagina */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1a1a1a;  /* Colore di sfondo nero */
+    color: #ffffff;  /* Testo bianco */
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Stile della barra di navigazione */
+nav {
+    background-color: #333333;  /* Grigio scuro per la barra di navigazione */
+    padding: 10px 0;
+}
+
+nav ul {
+    list-style-type: none;
+    text-align: center;
+}
+
+nav ul li {
+    display: inline;
+    margin-right: 20px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #ffffff;  /* Testo bianco */
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+}
+
+nav ul li a:hover {
+    background-color: #4CAF50;  /* Verde evidenziato al passaggio del mouse */
+}
+
+/* Stile del contenitore principale */
+.container {
+    width: 80%;
+    margin: auto;
+    padding: 20px;
+}
+
+/* Stile per i messaggi flash */
+.container ul {
+    list-style-type: none;
+    background-color: #4CAF50;  /* Verde per i messaggi */
+    color: #ffffff;  /* Testo bianco */
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.container ul li {
+    margin-bottom: 5px;
+}
+
+/* Stile per il blocco del contenuto */
+.content {
+    background-color: #2b2b2b;  /* Grigio scuro per il contenuto */
+    padding: 20px;
+    border-radius: 5px;
+}
+
+/* Stile per i link nel contenuto */
+.content a {
+    color: #4CAF50;  /* Verde per i link nel contenuto */
+    text-decoration: none;
+}
+
+.content a:hover {
+    text-decoration: underline;
+}
+
+/* Stili per il form di login */
+.login-form {
+    max-width: 400px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.8);  /* Sfondo bianco con trasparenza */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
+}
+
+.login-form h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #4CAF50;  /* Verde */
+}
+
+.login-form input[type="text"],
+.login-form input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.login-form button {
+    background-color: #4CAF50;  /* Verde */
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.login-form button:hover {
+    background-color: #45a049;  /* Verde scuro al passaggio del mouse */
+}
+
+/* Stili per la lista dei giochi */
+.game-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Stili per ogni riquadro di gioco */
+.game-item {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.game-item:hover {
+    transform: translateY(-5px);
+}
+
+.game-item h2 {
+    color: #333333;
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+
+.game-item p {
+    color: #666666;
+    font-size: 1.1em;
+    margin-bottom: 15px;
+}
+
+.game-item a {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.game-item a:hover {
+    background-color: #45a049;
+}
+
+/* Stili per il form di registrazione */
+.signup-form {
+    max-width: 400px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.8);  /* Sfondo bianco con trasparenza */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
+}
+
+.signup-form h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #4CAF50;  /* Verde */
+}
+
+.signup-form input[type="text"],
+.signup-form input[type="password"],
+.signup-form input[type="url"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.signup-form button {
+    background-color: #4CAF50;  /* Verde */
+    color: #ffffff;
+    border: none;
+    padding: 12px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.signup-form button:hover {
+    background-color: #45a049;  /* Verde scuro al passaggio del mouse */
+}
+

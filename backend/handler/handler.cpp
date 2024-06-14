@@ -55,18 +55,18 @@ namespace handler {
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const SignupException& e) {
-                std::string error = generateJson("", "Signup failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Signup failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Signup failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Signup failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string error = generateJson("", "Invalid signup format");
+            std::string error = generateJson("", "Invalid signup format", true);
             serverSocket.sendMessage(error.c_str(), clientSocket);
             return;
         }
@@ -93,29 +93,29 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const CreateGameException& e) {
-                std::string error = generateJson("", "Add game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Add game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Add game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid add game format");
+            std::string response = generateJson("", "Invalid add game format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -133,29 +133,29 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const GetGameException& e) {
-                std::string error = generateJson("", "Get games failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get games failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Get games failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get games failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Get games failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get games failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid get games format");
+            std::string response = generateJson("", "Invalid get games format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -173,29 +173,29 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const GetGameException& e) {
-                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid get game format");
+            std::string response = generateJson("", "Invalid get game format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -213,29 +213,29 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const GetGameException& e) {
-                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Get game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid get game format");
+            std::string response = generateJson("", "Invalid get game format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -253,29 +253,29 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const ReviewException& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid get review format");
+            std::string response = generateJson("", "Invalid get review format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -293,34 +293,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const ReviewException& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const UserNotFoundException& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid get review format");
+            std::string response = generateJson("", "Invalid get review format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -338,34 +338,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const ReviewException& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const GetGameException& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Get review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid get review format");
+            std::string response = generateJson("", "Invalid get review format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -387,39 +387,39 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const GetGameException& e) {
-                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const CreateReviewException& e) {
-                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Add review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid add review format");
+            std::string response = generateJson("", "Invalid add review format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -439,39 +439,39 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const GetGameException& e) {
-                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const CreateReservationException& e) {
-                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid add reservation format");
+            std::string response = generateJson("", "Invalid add reservation format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -500,39 +500,39 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const GetGameException& e) {
-                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const PurchaseException& e) {
-                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Add purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid add purchase format");
+            std::string response = generateJson("", "Invalid add purchase format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -550,34 +550,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const ReservationException& e) {
-                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid get reservation format");
+            std::string response = generateJson("", "Invalid get reservation format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -595,34 +595,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const PurchaseException& e) {
-                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid get purchases format");
+            std::string response = generateJson("", "Invalid get purchases format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -641,7 +641,7 @@ namespace handler {
                 serverSocket.sendMessage(response.c_str(), clientSocket);
             }
             catch (const std::exception& e) {
-                std::string error = "Get recommendations failed: " + std::string(e.what());
+                std::string error = "Get recommendations failed: " + std::string(e.what(), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
@@ -667,34 +667,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const HandlerException& e) {
-                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Modify user failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid Modify user format");
+            std::string response = generateJson("", "Invalid Modify user format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -718,34 +718,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const GetGameException& e) {
-                std::string error = generateJson("", "Update game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const HandlerException& e) {
-                std::string error = generateJson("", "Update game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Update game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Update game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid update game format");
+            std::string response = generateJson("", "Invalid update game format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -766,34 +766,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const ReservationException& e) {
-                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const mongocxx::exception& e) {
-                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid update reservation format");
+            std::string response = generateJson("", "Invalid update reservation format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -819,34 +819,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const ReservationException& e) {
-                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const mongocxx::exception& e) {
-                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid update purchase format");
+            std::string response = generateJson("", "Invalid update purchase format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -868,34 +868,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const ReviewException& e) {
-                std::string error = generateJson("", "Update review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const mongocxx::exception& e) {
-                std::string error = generateJson("", "Update review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const jwt::TokenExpiredError& e) {
-                std::string error = generateJson("", "Update review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Update review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Update review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid update review format");
+            std::string response = generateJson("", "Invalid update review format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -913,24 +913,24 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (const UserNotFoundException& e) {
-                std::string error = generateJson("", "Delete User failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete User failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Delete User failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete User failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid delete user format");
+            std::string response = generateJson("", "Invalid delete user format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -948,24 +948,24 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (GetGameException& e) {
-                std::string error = generateJson("", "Delete Game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete Game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Delete game failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete game failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid delete game format");
+            std::string response = generateJson("", "Invalid delete game format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -985,24 +985,24 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (GetGameException& e) {
-                std::string error = generateJson("", "Delete reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Delete reservation failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete reservation failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid delete reservation format");
+            std::string response = generateJson("", "Invalid delete reservation format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -1024,24 +1024,24 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (GetGameException& e) {
-                std::string error = generateJson("", "Delete purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Delete purchase failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete purchase failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid delete purchase format");
+            std::string response = generateJson("", "Invalid delete purchase format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -1061,34 +1061,34 @@ namespace handler {
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
                 else {
-                    std::string error = generateJson("", "Errore verifica del token");
+                    std::string error = generateJson("", "Errore verifica del token", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     return;
                 }
             }
             catch (UserNotFoundException& e) {
-                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (GetGameException& e) {
-                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (ReviewException& e) {
-                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()));
+                std::string error = generateJson("", "Delete review failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            std::string response = generateJson("", "Invalid delete review format");
+            std::string response = generateJson("", "Invalid delete review format", true);
             serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
@@ -1335,14 +1335,14 @@ namespace handler {
                         clientConnected = false;
                     }
                     else {
-                        std::string error = generateJson("", "Unknown command");
+                        std::string error = generateJson("", "Unknown command", true);
                         serverSocket.sendMessage(error.c_str(), clientSocket);
                     }
                     memset(recvbuf, 0, recvbuflen);
                 }
                 else {
                     // Gestione la disconnessione del client
-                    std::string error = generateJson("", "Client disconnected.");
+                    std::string error = generateJson("", "Client disconnected.", true);
                     serverSocket.sendMessage(error.c_str(), clientSocket);
                     clientConnected = false;
                 }

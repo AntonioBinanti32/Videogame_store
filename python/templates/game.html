@@ -3,9 +3,9 @@
 <h1>{{ game.name }}</h1>
 <p>{{ game.description }}</p>
 <p>Price: {{ game.price }}</p>
-<a href="{{ url_for('add_to_cart', game_id=game.id) }}">Add to Cart</a>
-<a href="{{ url_for('reviews', game_id=game.id) }}">View Reviews</a>
-<form action="{{ url_for('reviews', game_id=game.id) }}" method="post">
+<a href="{{ url_for('add_to_cart', gameTitle=game.title) }}">Add to Cart</a>
+<a href="{{ url_for('reviews', gameTitle=game.title) }}">View Reviews</a>
+<form action="{{ url_for('reviews', gameTitle=game.title) }}" method="post">
     <textarea name="review" placeholder="Leave a review"></textarea>
     <button type="submit">Submit Review</button>
 </form>

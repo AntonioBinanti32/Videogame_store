@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Reviews for Game ID: {{ game_id }}</h1>
+<h1>Reviews for {{ gameTitle }}</h1>
 <ul>
     {% for review in reviews %}
-        <li>{{ review }}</li>
+        <li>{{ review.content }}</li>
     {% endfor %}
 </ul>
-<a href="{{ url_for('game', game_id=game_id) }}">Back to Game</a>
+<a href="{{ url_for('game', gameTitle=gameTitle) }}">Back to Game</a>
 {% endblock %}

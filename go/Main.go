@@ -130,20 +130,4 @@ func main() {
 	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":"+serverPort, nil))
-
-	/* ESEMPI
-	r.HandleFunc("/", HomeHandler)
-	r.HandleFunc("/signup", SignupHandler).Methods("POST")
-	// Route per l'aggiornamento di un elemento esistente
-	r.HandleFunc("/item/{id}", UpdateItemHandler).Methods("PUT")
-
-	// Route per l'eliminazione di un elemento esistente
-	r.HandleFunc("/item/{id}", DeleteItemHandler).Methods("DELETE")
-
-	// Route per ottenere tutti gli elementi
-	r.HandleFunc("/items", GetItemsHandler).Methods("GET")
-	http.Handle("/", r)
-
-	log.Fatal(http.ListenAndServe(":8080", r))
-	*/
 }

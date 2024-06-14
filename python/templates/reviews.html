@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Reviews for Game ID: {{ game_id }}</h1>
+<ul>
+    {% for review in reviews %}
+        <li>{{ review }}</li>
+    {% endfor %}
+</ul>
+<a href="{{ url_for('game', game_id=game_id) }}">Back to Game</a>
+{% endblock %}

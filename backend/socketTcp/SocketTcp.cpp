@@ -111,7 +111,7 @@ SOCKET SocketTcp::acceptConnection() {
 
 bool SocketTcp::sendMessage(const char* message, SOCKET clientSocket) {
     std::cout << "Socket" << clientSocket << " message: " << message << std::endl;
-    //Aggiungo "\n" come terminatore
+    //Aggiungo "|" come terminatore
     size_t message_length = strlen(message);
     char* new_message = (char*)malloc(message_length + 2);
     strcpy(new_message, message);

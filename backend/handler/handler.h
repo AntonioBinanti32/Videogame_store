@@ -6,6 +6,7 @@
 #include "../database/MongoDB.h"
 #include <string>
 #include "jwt/jwt.hpp"
+#include <boost/url.hpp>
 
 namespace handler {
     void handleClient(SocketTcp& serverSocket, SOCKET clientSocket);
@@ -42,6 +43,7 @@ namespace handler {
     std::string generateJwtToken(const std::string& username);
     std::string generateJson(const std::string& token, const std::string& message);
     bool verifyToken(const std::string& token, const std::string& username);
+    string urlDecode(const string& SRC);
 };
 
 #endif // VIDEOGAME_STORE_HANDLER_H

@@ -32,8 +32,11 @@ def home():
         if not is_user_logged_in():
             return redirect(url_for('login'))
 
-        response = requests.get(f'{backend_url}/getGames', headers = getHeaders()) #TODO: inserire user e token per validazione
-        games = response.json()
+        response_user = requests.get(f'{backend_url}/getGames', headers=getHeaders())
+        games = response_user.json()
+
+        response_games = requests.get(f'{backend_url}/getGames', headers = getHeaders())
+        games = response_games.json()
         return render_template('home.html', games=games)
     except requests.exceptions.HTTPError as http_err:
         flash('Login failed: invalid credentials')
@@ -47,7 +50,7 @@ def home():
 
 @app.route('/game/<string:gameTitle>')
 def game(gameTitle):
-    response = requests.get(f'{backend_url}/getGameByTitle/{gameTitle}')
+    response = requests.get(f'{backend_url}/getGameByTitle/{gameTitle}', headers = getHeaders())
     game = response.json()
     return render_template('game.html', game=game)
 
@@ -94,12 +97,22 @@ def login():
 def signup():
     if request.method == 'POST':
         user_data = request.form
-        response = requests.post(f'{backend_url}/signup', json=user_data)
-        if response.status_code == 201:
-            return redirect(url_for('login'))
-        else:
-            flash('Signup Failed')
-            return redirect(url_for('signup'))
+        try:
+            response = requests.post(f'{backend_url}/signup', json=user_data)
+            # Questo genera un'eccezione per codici di stato HTTP 4xx/5xx
+            response.raise_for_status()
+            session['user'] = response.json()['user']
+            session['token'] = response.json()['token']
+            return redirect(url_for('home'))
+        except requests.exceptions.HTTPError as http_err:
+            flash('Signup failed: invalid credentials')
+        except requests.exceptions.ConnectionError as conn_err:
+            flash('Connection error: please try again later')
+        except requests.exceptions.Timeout as timeout_err:
+            flash('Request timed out: please try again later')
+        except requests.exceptions.RequestException as req_err:
+            flash('An unexpected error occurred: please try again later')
+        return redirect(url_for('signup'))
     return render_template('signup.html')
 
 

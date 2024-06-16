@@ -4,22 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <header>
+        <div class="logo-wrapper">
+            <img src="https://neon-factory.com/cdn/shop/products/video-game-pacman-512_aab66925-0907-4ffb-82ab-1b0dbcfaf5c0_1024x1024@2x.png?v=1587306041" alt="Left Logo">
+            <div class="logo">
+                <a href="{{ url_for('home') }}">Game Store</a>
+            </div>
+            <img src=https://theneonsign.co/cdn/shop/products/ghosteg_700x700.png?v=1658858573" alt="Right Logo">
+        </div>
+    </header>
+    {% block nav %}
     <nav>
         <ul>
             <li><a href="{{ url_for('home') }}">Home</a></li>
             <li><a href="{{ url_for('cart') }}">Cart</a></li>
+            <!--
             {% if 'user' in session %}
                 <li><a href="{{ url_for('logout') }}">Logout</a></li>
             {% else %}
                 <li><a href="{{ url_for('login') }}">Login</a></li>
                 <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
             {% endif %}
+            -->
         </ul>
+        </div>
+        <div class="user-cart">
+            <a href="{{ url_for('cart') }}" class="cart-link">
+                <img src="https://cdn-icons-png.flaticon.com/512/7595/7595338.png" alt="Cart" class="cart-icon">
+                <span>Cart</span>
+            </a>
+            {% if 'user' in session %}
+                <div class="user-menu">
+                    <img src="https://www.iconpacks.net/icons/2/free-user-icon-3297-thumb.png" alt="User" class="user-icon">
+                    <a> {{ session.user }} </a>
+                    <div class="user-dropdown">
+                        <a href="{{ url_for('reviews', gameTitle='defaultGameTitle') }}">My Reviews</a>
+                        <a href="{{ url_for('logout') }}">Logout</a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="user-link">Login</a>
+                <a href="{{ url_for('signup') }}" class="user-link">Sign Up</a>
+            {% endif %}
+        </div>
     </nav>
-    <div>
+    {% endblock %}
+    <div class="container">
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             <ul>

@@ -505,6 +505,33 @@ h1 {
     background-color: #45a049;
 }
 
+.rating {
+    display: flex;
+    flex-direction: row-reverse; /* Invert the order of the stars */
+    font-size: 0; /* Hide the text inside radio buttons */
+}
+
+.rating input {
+    display: none; /* Hide radio inputs */
+}
+
+.rating label {
+    font-size: 24px; /* Size of the stars */
+    cursor: pointer;
+    color: #ccc; /* Color of the unselected stars */
+    margin: 0 2px; /* Add some spacing between stars */
+}
+
+.rating input:checked ~ label {
+    color: #ffcc00; /* Color all the stars up to the selected one */
+}
+
+.rating label:hover,
+.rating label:hover ~ label {
+    color: #ffcc00; /* Color all stars up to the hovered one */
+}
+
+
 
 /* Animazione glow per il logo */
 @keyframes glow {

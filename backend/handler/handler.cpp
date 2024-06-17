@@ -45,7 +45,7 @@ namespace handler {
         if (std::getline(iss, username, '*') && std::getline(iss, password, '*') && std::getline(iss, imageUrl, '*')) {
             try {
                 if (imageUrl.empty()) {
-                    imageUrl = "https://example.com/default_image.png"; //TODO: Cambiare immagine facoltativa
+                    imageUrl = "https://www.iconpacks.net/icons/2/free-user-icon-3297-thumb.png";
                 }
                 MongoDB* mongoDb = MongoDB::getInstance();
                 mongoDb->signup(username, password,imageUrl);
@@ -72,6 +72,46 @@ namespace handler {
         }
     }
 
+    void handleGetUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string username, actualUser, token;
+        if (std::getline(iss, username, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
+            try {
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json user = mongoDb->getUser(username);
+                    std::string response = generateJson("", user.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token", true);
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
+            }
+            catch (const UserNotFoundException& e) {
+                std::string error = generateJson("", "Get user failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get user failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get user failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            std::string response = generateJson("", "Invalid get user format", true);
+            serverSocket.sendMessage(response.c_str(), clientSocket);
+            return;
+        }
+    }
+
     void handleAddGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actualUser, token;
@@ -84,7 +124,7 @@ namespace handler {
                 double price = std::stod(price_str);
                 int stock = std::stoi(stock_str);
                 if (imageUrl.empty()) {
-                    imageUrl = "https://example.com/default_image.png";
+                    imageUrl = "https://www.creativefabrica.com/wp-content/uploads/2023/05/08/Video-Game-Controller-Logo-Graphics-69127373-1-580x387.png";
                 }
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
@@ -209,6 +249,46 @@ namespace handler {
                 if (verifyToken(token, actualUser)) {
                     MongoDB* mongoDb = MongoDB::getInstance();
                     nlohmann::json games = mongoDb->getGameByTitle(title);
+                    std::string response = generateJson("", games.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token", true);
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
+            }
+            catch (const GetGameException& e) {
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get game failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            std::string response = generateJson("", "Invalid get game format", true);
+            serverSocket.sendMessage(response.c_str(), clientSocket);
+            return;
+        }
+    }
+
+    void handleGetGameByGenre(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string genre, actualUser, token;
+        if (std::getline(iss, genre, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
+            try {
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json games = mongoDb->getGameByGenre(genre);
                     std::string response = generateJson("", games.dump(4)); // Converte il JSON in una stringa formattata con indentazione
                     serverSocket.sendMessage(response.c_str(), clientSocket);
                 }
@@ -1251,6 +1331,9 @@ namespace handler {
                     else if (message.rfind("signup*", 0) == 0) {
                         handleSignup(message.substr(7), serverSocket, clientSocket);
                     }
+                    else if (message.rfind("getUser*", 0) == 0) {
+                        handleGetUser(message.substr(8), serverSocket, clientSocket);
+                    }
                     else if (message.rfind("addGame*", 0) == 0) {
                         handleAddGame(message.substr(8), serverSocket, clientSocket);
                     }
@@ -1262,6 +1345,9 @@ namespace handler {
                     }
                     else if (message.rfind("getGameByTitle*", 0) == 0) {
                         handleGetGameByTitle(message.substr(15), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("getGameByGenre*", 0) == 0) {
+                        handleGetGameByGenre(message.substr(15), serverSocket, clientSocket);
                     }
                     else if (message.rfind("getReview*", 0) == 0) {
                         handleGetReview(message.substr(10), serverSocket, clientSocket);

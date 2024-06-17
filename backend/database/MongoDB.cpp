@@ -98,6 +98,19 @@ void MongoDB::addGame(const std::string& title, const std::string& genre, const 
     }
 }
 
+nlohmann::json MongoDB::getUser(const std::string& username) {
+    try {
+        auto result = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));
+        if (!result) {
+            throw UserNotFoundException("Errore durante il recupero del gioco: Gioco non trovato");
+        }
+        return nlohmann::json::parse(bsoncxx::to_json(*result));
+    }
+    catch (std::exception& e) {
+        throw UserNotFoundException("Errore durante il recupero del gioco");
+    }
+}
+
 // Ottenimento della lista dei giochi
 nlohmann::json MongoDB::getGames() {
     nlohmann::json games;
@@ -137,6 +150,25 @@ nlohmann::json MongoDB::getGameByTitle(const std::string& title) {
     }
     catch (std::exception& e) {
         throw GetGameException("Errore durante il recupero del gioco");
+    }
+}
+
+nlohmann::json MongoDB::getGameByGenre(const std::string& genre) { //TODO: Da sistemare
+    try{
+        auto filter = bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("genre", genre));
+
+        auto cursor = gameCollection.find(filter.view());
+
+        nlohmann::json gamesArray = nlohmann::json::array();
+
+        for (auto&& doc : cursor) {
+            gamesArray.push_back(nlohmann::json::parse(bsoncxx::to_json(doc)));
+        }
+
+        return gamesArray;
+    }
+    catch (std::exception& e) {
+        throw GetGameException("Errore durante il recupero dei giochi");
     }
 }
 

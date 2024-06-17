@@ -14,7 +14,7 @@
             <div class="logo">
                 <a href="{{ url_for('home') }}">Game Store</a>
             </div>
-            <img src=https://theneonsign.co/cdn/shop/products/ghosteg_700x700.png?v=1658858573" alt="Right Logo">
+            <img src="https://theneonsign.co/cdn/shop/products/ghosteg_700x700.png?v=1658858573" alt="Right Logo">
         </div>
     </header>
     {% block nav %}
@@ -39,7 +39,7 @@
             </a>
             {% if 'user' in session %}
                 <div class="user-menu">
-                    <img src="https://www.iconpacks.net/icons/2/free-user-icon-3297-thumb.png" alt="User" class="user-icon">
+                    <img src="{{ session.get('user_image') }}" alt="User" class="user-icon">
                     <a> {{ session.user }} </a>
                     <div class="user-dropdown">
                         <a href="{{ url_for('reviews', gameTitle='defaultGameTitle') }}">My Reviews</a>

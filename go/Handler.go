@@ -92,6 +92,28 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) 
 	json.NewEncoder(w).Encode(jsonResponse)
 }
 
+func GetUserHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, username string) {
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getUser*" + username + "*" + actualUser + "*" + token + "*"
+
+	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", err), http.StatusInternalServerError)
+		return
+	}
+	if jsonResponse.Error {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
+		return
+	}
+
+	jsonMessage := getJsonList(jsonResponse.Message)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jsonMessage)
+}
+
 func AddGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
 	var req AddGameRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -147,6 +169,28 @@ func GetGameByTitleHandler(w http.ResponseWriter, r *http.Request, socketTCPPort
 	token := r.Header.Get("Token")
 
 	message := "getGameByTitle*" + gameTitle + "*" + actualUser + "*" + token + "*"
+
+	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", err), http.StatusInternalServerError)
+		return
+	}
+	if jsonResponse.Error {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
+		return
+	}
+
+	jsonMessage := getJsonList(jsonResponse.Message)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jsonMessage)
+}
+
+func GetGameByGenreHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, genre string) {
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getGameByGenre*" + genre + "*" + actualUser + "*" + token + "*"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {

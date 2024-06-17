@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import requests
 import configparser
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -25,6 +26,32 @@ def getHeaders():
 
     return headers
 
+def getUserInformation():
+    user = session.get('user')
+    response_user = requests.get(f'{backend_url}/getUser/{user}', headers=getHeaders())
+    return response_user.json()
+
+# Definisci il filtro personalizzato per la formattazione della data
+@app.template_filter('dateformat')
+def dateformat(value):
+    try:
+        if isinstance(value, (int, float)):
+            # Se il valore è un timestamp Unix, convertilo in datetime
+            dt_object = datetime.utcfromtimestamp(value / 1000.0)
+        elif isinstance(value, dict) and '$date' in value:
+            # Se il valore è un oggetto data MongoDB
+            dt_object = datetime.utcfromtimestamp(value['$date'] / 1000.0)
+        else:
+            raise ValueError("Formato data non riconosciuto")
+
+        # Formatta la data come desiderato (es. "%Y-%m-%d %H:%M:%S")
+        formatted_date = dt_object.strftime("%Y-%m-%d %H:%M:%S")
+        return formatted_date
+    except Exception as e:
+        print(f"Errore nella formattazione del timestamp: {e}")
+        return "Data non disponibile"
+
+
 
 @app.route('/')
 def home():
@@ -32,12 +59,11 @@ def home():
         if not is_user_logged_in():
             return redirect(url_for('login'))
 
-        response_user = requests.get(f'{backend_url}/getGames', headers=getHeaders())
-        games = response_user.json()
+        actualUser = getUserInformation()
 
         response_games = requests.get(f'{backend_url}/getGames', headers = getHeaders())
         games = response_games.json()
-        return render_template('home.html', games=games)
+        return render_template('home.html', games=games, actualUser=actualUser)
     except requests.exceptions.HTTPError as http_err:
         flash('Login failed: invalid credentials')
     except requests.exceptions.ConnectionError as conn_err:
@@ -80,6 +106,8 @@ def login():
             response.raise_for_status()  # Questo genera un'eccezione per codici di stato HTTP 4xx/5xx
             session['user'] = response.json()['user']
             session['token'] = response.json()['token']
+            user = getUserInformation()
+            session['user_image'] = user['image_url']
             return redirect(url_for('home'))
         except requests.exceptions.HTTPError as http_err:
             flash('Login failed: invalid credentials')
@@ -119,14 +147,34 @@ def signup():
 @app.route('/reviews/<string:gameTitle>', methods=['GET', 'POST'])
 def reviews(gameTitle):
     if request.method == 'POST':
-        review_data = request.form
-        review_data['gameTitle'] = gameTitle
-        response = requests.post(f'{backend_url}/addReview', json=review_data)
-        return redirect(url_for('reviews', gameTitle=gameTitle))
+        # Ottieni i dati del form e aggiungi il gameTitle e il rating
+        review_text = request.form.get('review')
+        rating = int(request.form.get('rating'))  # Converti il rating in intero
+        username = session.get('user')
+        review_data = {
+            'username': username,
+            'gameTitle': gameTitle,
+            'reviewText': review_text,
+            'rating': rating
+        }
+
+        headers = getHeaders()
+        try:
+            response = requests.post(f'{backend_url}/addReview', json=review_data, headers=headers)
+            response.raise_for_status()
+            flash('Review added successfully!', 'success')
+        except requests.exceptions.RequestException as e:
+            flash('Failed to add review. Please try again later.', 'danger')
+
+        return redirect(url_for('game', gameTitle=gameTitle))
+
     else:
+        # Metodo GET per ottenere le recensioni già presenti
         response = requests.get(f'{backend_url}/getReviewByGame/{gameTitle}')
         reviews = response.json()
-        return render_template('reviews.html', reviews=reviews, gameTitle=gameTitle)
+        return render_template('game.html', gameTitle=gameTitle)
+    return render_template('game.html', gameTitle=gameTitle)
+
 
 
 @app.route('/logout')

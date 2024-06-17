@@ -40,8 +40,11 @@ func main() {
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		LoginHandler(w, r, socketTCPPort)
 	}).Methods("POST")
-
-	//TODO: Verificare che funzionino
+	r.HandleFunc("/getUser/{username}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		username := params["username"]
+		GetUserHandler(w, r, socketTCPPort, username)
+	}).Methods("GET")
 	r.HandleFunc("/addGame", func(w http.ResponseWriter, r *http.Request) {
 		AddGameHandler(w, r, socketTCPPort)
 	}).Methods("POST")
@@ -52,6 +55,11 @@ func main() {
 		params := mux.Vars(r)
 		gameTitle := params["gameTitle"]
 		GetGameByTitleHandler(w, r, socketTCPPort, gameTitle)
+	}).Methods("GET")
+	r.HandleFunc("/getGameByGenre/{genre}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		genre := params["genre"]
+		GetGameByGenreHandler(w, r, socketTCPPort, genre)
 	}).Methods("GET")
 	r.HandleFunc("/getReview/{reviewID}", func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)

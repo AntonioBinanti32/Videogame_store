@@ -13,10 +13,12 @@ namespace handler {
 
     void handleLogin(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleSignup(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
+    void handleGetUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleAddGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetGames(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetGameByTitle(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
+    void handleGetGameByGenre(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetReviewByUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetReviewByGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);

@@ -2,5 +2,5 @@
 out/
 build/
 .idea/
-__pycache/
+__pycache__/
 .exe

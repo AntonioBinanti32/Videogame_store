@@ -26,6 +26,7 @@ namespace handler {
     void handleAddReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleAddPurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
+    void handleGetAllPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     //TODO: void handleGetRecommendations(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleUpdateUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);

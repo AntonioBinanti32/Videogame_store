@@ -466,6 +466,24 @@ nlohmann::json MongoDB::getReservations(const std::string& username) {
     }
 }
 
+nlohmann::json MongoDB::getAllPurchases() {
+    try {
+        auto cursor = purchaseCollection.find({});
+
+        nlohmann::json purchases_json;
+
+        for (const auto& doc : cursor) {
+            purchases_json.push_back(nlohmann::json::parse(bsoncxx::to_json(doc)));
+        }
+
+        return purchases_json;
+    }
+    catch (std::exception& e) {
+        throw PurchaseException("Error retrieving all purchases");
+    }
+}
+
+
 nlohmann::json MongoDB::getPurchases(const std::string& username) {
     try {
         auto user_doc = userCollection.find_one(bsoncxx::builder::basic::make_document(bsoncxx::builder::basic::kvp("username", username)));

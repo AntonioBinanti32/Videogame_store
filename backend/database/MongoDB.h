@@ -61,6 +61,7 @@ public:
     void addReservation(const std::string& username, const std::string& game_id, int num_copies);
     void addPurchase(const std::string& username, const std::string& game_title, int num_copies);
     nlohmann::json getReservations(const std::string& username);
+    nlohmann::json MongoDB::getAllPurchases();
     nlohmann::json getPurchases(const std::string& username);
     //TODO: std::vector<bsoncxx::document::value> getRecommendations(const std::string& username);
     std::chrono::system_clock::time_point convertToDate(const std::string& date);

@@ -375,6 +375,28 @@ func GetReservationsHandler(w http.ResponseWriter, r *http.Request, socketTCPPor
 	json.NewEncoder(w).Encode(jsonMessage)
 }
 
+func GetAllPurchasesHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getAllPurchases*" + actualUser + "*" + token + "*"
+
+	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", err), http.StatusInternalServerError)
+		return
+	}
+	if jsonResponse.Error {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
+		return
+	}
+
+	jsonMessage := getJsonList(jsonResponse.Message)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jsonMessage)
+}
+
 func GetPurchasesHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, username string) {
 
 	actualUser := r.Header.Get("ActualUser")

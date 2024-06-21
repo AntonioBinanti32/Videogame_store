@@ -13,10 +13,8 @@ config.read('config.ini')
 
 backend_url = config.get('backend', 'backend_url')
 
-#TODO: Fare casi crud di game per amministratore in base.html, game.html
-#TODO: sistemare nav bar admin
-#TODO: Fare pagina fatturato
 #TODO: Implementare users.html
+#TODO: Implementare sistema notifiche
 #TODO: implementare giochi suggeriti
 
 
@@ -407,6 +405,31 @@ def checkout():
     except requests.exceptions.RequestException as e:
         flash('An error occurred while processing your request. Please try again later.', 'danger')
         return redirect(url_for('cart'))
+
+
+@app.route('/purchases', methods=['GET'])
+def purchases():
+    try:
+        if not is_admin():
+            flash('Only admin users can update games.', 'danger')
+            return redirect(url_for('home'))
+
+        response = requests.get(f'{backend_url}/getAllPurchases', headers=getHeaders())
+        response.raise_for_status()
+        purchases = response.json()
+
+        total_revenue = sum(item['num_copies'] * item['price'] for item in purchases)
+
+        return render_template('purchases.html', purchases=purchases, total_revenue=total_revenue, admin=is_admin())
+    except requests.exceptions.HTTPError as http_err:
+        flash('Failed to fetch purchases: invalid credentials')
+    except requests.exceptions.ConnectionError as conn_err:
+        flash('Connection error: please try again later')
+    except requests.exceptions.Timeout as timeout_err:
+        flash('Request timed out: please try again later')
+    except requests.exceptions.RequestException as req_err:
+        flash('An unexpected error occurred: please try again later')
+    return redirect(url_for('home'))
 
 @app.route('/logout')
 def logout():

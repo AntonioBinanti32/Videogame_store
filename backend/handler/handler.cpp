@@ -663,6 +663,51 @@ namespace handler {
         }
     }
 
+    void handleGetAllPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string actualUser, token;
+        if (std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
+            try {
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json purchases = mongoDb->getAllPurchases();
+                    std::string response = generateJson("", purchases.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token", true);
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
+            }
+            catch (const UserNotFoundException& e) {
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const PurchaseException& e) {
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get purchases failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            std::string response = generateJson("", "Invalid get purchases format", true);
+            serverSocket.sendMessage(response.c_str(), clientSocket);
+            return;
+        }
+    }
+
     void handleGetPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string username, actualUser, token;
@@ -1369,6 +1414,9 @@ namespace handler {
                     }
                     else if (message.rfind("getReservations*", 0) == 0) {
                         handleGetReservation(message.substr(16), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("getAllPurchases*", 0) == 0) {
+                        handleGetAllPurchases(message.substr(16), serverSocket, clientSocket);
                     }
                     else if (message.rfind("getPurchases*", 0) == 0) {
                         handleGetPurchases(message.substr(13), serverSocket, clientSocket);

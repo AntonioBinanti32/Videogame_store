@@ -90,6 +90,9 @@ func main() {
 		username := params["username"]
 		GetReservationsHandler(w, r, socketTCPPort, username)
 	}).Methods("GET")
+	r.HandleFunc("/getAllPurchases", func(w http.ResponseWriter, r *http.Request) {
+		GetAllPurchasesHandler(w, r, socketTCPPort)
+	}).Methods("GET")
 	r.HandleFunc("/getPurchases/{username}", func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		username := params["username"]

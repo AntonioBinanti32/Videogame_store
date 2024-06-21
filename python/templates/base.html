@@ -40,6 +40,9 @@
                     {% endif %}
                     <div class="user-dropdown">
                         <a href="{{ url_for('checkout', gameTitle='defaultGameTitle') }}">My Purchases</a>
+                        {% if admin %}
+                            <a href="{{ url_for('purchases') }}">All purchases</a>
+                        {% endif %}
                         <a href="{{ url_for('logout') }}">Logout</a>
                     </div>
                 </div>

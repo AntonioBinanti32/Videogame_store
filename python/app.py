@@ -13,12 +13,20 @@ config.read('config.ini')
 
 backend_url = config.get('backend', 'backend_url')
 
-#TODO: Fare casi crud di game per amministratore
+#TODO: Fare casi crud di game per amministratore in base.html, game.html
+#TODO: Fare pagina fatturato
+#TODO: Implementare users.html
 #TODO: implementare giochi suggeriti
 
 
 def is_user_logged_in():
     return 'user' in session
+
+def is_admin():
+    if session['user'] == 'admin':
+            return True
+    else:
+        return False
 
 def getHeaders():
     user = session.get('user')
@@ -92,7 +100,7 @@ def home():
         # Recupera i generi dei giochi
         genres = list(set(game['genre'] for game in games))
 
-        return render_template('home.html', games=games, genres=genres, actualUser=actualUser)
+        return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin())
     except requests.exceptions.HTTPError as http_err:
         flash('Login failed: invalid credentials')
     except requests.exceptions.ConnectionError as conn_err:
@@ -108,7 +116,48 @@ def home():
 def game(gameTitle):
     response = requests.get(f'{backend_url}/getGameByTitle/{gameTitle}', headers = getHeaders())
     game = response.json()
-    return render_template('game.html', game=game)
+    return render_template('game.html', game=game, admin=is_admin())
+
+@app.route('/update_game', methods=['POST'])
+def update_game():
+    if not is_admin():
+        flash('Only admin users can update games.', 'danger')
+        return redirect(url_for('home'))
+
+    update_data = {
+        'title': request.form['title'],
+        'newGenre': request.form['newGenre'],
+        'newReleaseDate': request.form['newReleaseDate'],
+        'newDeveloper': request.form['newDeveloper'],
+        'newPrice': float(request.form['newPrice']),
+        'newStock': int(request.form['newStock']),
+        'newDescription': request.form['newDescription'],
+        'newImageUrl': request.form['newImageUrl']
+    }
+
+    try:
+        response = requests.put(f'{backend_url}/updateGame', json=update_data, headers=getHeaders())
+        response.raise_for_status()
+        flash('Game updated successfully!', 'success')
+    except requests.exceptions.RequestException as e:
+        flash(f"Failed to update game: {str(e)}", 'danger')
+
+    return redirect(url_for('home'))
+
+@app.route('/delete_game/<string:gameTitle>', methods=['DELETE'])
+def delete_game(gameTitle):
+    if not is_admin():
+        flash('Only admin users can delete games.', 'danger')
+        return redirect(url_for('home'))
+
+    try:
+        response = requests.delete(f'{backend_url}/deleteGame/{gameTitle}', headers=getHeaders())
+        response.raise_for_status()
+        flash('Game deleted successfully!', 'success')
+    except requests.exceptions.RequestException as e:
+        flash(f"Failed to delete game: {str(e)}", 'danger')
+
+    return redirect(url_for('home'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -185,8 +234,8 @@ def reviews(gameTitle):
         # Metodo GET per ottenere le recensioni già presenti
         response = requests.get(f'{backend_url}/getReviewByGame/{gameTitle}')
         reviews = response.json()
-        return render_template('game.html', gameTitle=gameTitle)
-    return render_template('game.html', gameTitle=gameTitle)
+        return render_template('game.html', gameTitle=gameTitle, admin=is_admin())
+    return render_template('game.html', gameTitle=gameTitle, admin=is_admin())
 
 @app.route('/cart', methods = ['GET'])
 def cart():
@@ -198,7 +247,7 @@ def cart():
         response = requests.get(f'{backend_url}/getReservations/{username}', headers=getHeaders())
         response.raise_for_status()
         cart_items = response.json()
-        return render_template('cart.html', cart_items=cart_items)
+        return render_template('cart.html', cart_items=cart_items, admin=is_admin())
     except requests.exceptions.HTTPError as http_err:
         flash('Failed to fetch cart: invalid credentials')
     except requests.exceptions.ConnectionError as conn_err:
@@ -294,7 +343,7 @@ def checkout():
             response = requests.get(f'{backend_url}/getPurchases/{username}', headers=getHeaders())
             response.raise_for_status()
             purchases = response.json()
-            return render_template('checkout.html', purchases=purchases)
+            return render_template('checkout.html', purchases=purchases, admin=is_admin())
 
     except requests.exceptions.RequestException as e:
         flash('An error occurred while processing your request. Please try again later.', 'danger')

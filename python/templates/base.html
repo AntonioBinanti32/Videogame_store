@@ -21,17 +21,7 @@
     <nav>
         <ul>
             <li><a href="{{ url_for('home') }}">Home</a></li>
-            <li><a href="{{ url_for('cart') }}">Cart</a></li>
-            <!--
-            {% if 'user' in session %}
-                <li><a href="{{ url_for('logout') }}">Logout</a></li>
-            {% else %}
-                <li><a href="{{ url_for('login') }}">Login</a></li>
-                <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
-            {% endif %}
-            -->
         </ul>
-        </div>
         <div class="user-cart">
             <a href="{{ url_for('cart') }}" class="cart-link">
                 <img src="https://cdn-icons-png.flaticon.com/512/7595/7595338.png" alt="Cart" class="cart-icon">
@@ -40,7 +30,11 @@
             {% if 'user' in session %}
                 <div class="user-menu">
                     <img src="{{ session.get('user_image') }}" alt="User" class="user-icon">
-                    <a> {{ session.user }} </a>
+                    {% if admin %}
+                        <a>ADMIN MODE</a>
+                    {% else %}
+                        <a> {{ session.user }} </a>
+                    {% endif %}
                     <div class="user-dropdown">
                         <a href="{{ url_for('checkout', gameTitle='defaultGameTitle') }}">My Purchases</a>
                         <a href="{{ url_for('logout') }}">Logout</a>

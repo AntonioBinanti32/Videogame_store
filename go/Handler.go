@@ -704,6 +704,8 @@ func communicateWithBackend(message string, socketTCPPort string) (Response, err
 		return Response{}, fmt.Errorf("failed to parse JSON response from backend: %v", err)
 	}
 
+	log.Printf("Message recived from backend: %v\n\n", jsonResponse)
+
 	return jsonResponse, nil
 }
 

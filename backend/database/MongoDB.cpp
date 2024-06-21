@@ -350,10 +350,21 @@ void MongoDB::addReservation(const std::string& username, const std::string& gam
             throw CreateReservationException("Il gioco e' gia' stato prenotato da questo utente");
         }
 
+        bsoncxx::document::view game_view = game_doc->view();
+
+        // Prelevo il prezzo del gioco
+        auto price_value = game_view["price"];
+        if (!price_value) {
+            throw CreateReservationException("price not found in game document");
+        }
+
+        double price = price_value.get_double().value;
+
         bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> reservation_doc = bsoncxx::builder::basic::make_document(
             bsoncxx::builder::basic::kvp("username", username),
             bsoncxx::builder::basic::kvp("game_title", game_title),
             bsoncxx::builder::basic::kvp("num_copies", num_copies),
+            bsoncxx::builder::basic::kvp("price", price),
             bsoncxx::builder::basic::kvp("reservation_date", bsoncxx::types::b_date(std::chrono::system_clock::now()))
         );
         reservationCollection.insert_one(reservation_doc);
@@ -390,6 +401,16 @@ void MongoDB::addPurchase(const std::string& username, const std::string& game_t
             throw GetGameException("Game not found");
         }
 
+        bsoncxx::document::view game_view = game_doc->view();
+
+        // Prelevo il prezzo del gioco
+        auto price_value = game_view["price"];
+        if (!price_value) {
+            throw CreateReservationException("price not found in game document");
+        }
+
+        double price = price_value.get_double().value;
+
         bsoncxx::oid purchase_id;
 
         bsoncxx::view_or_value<bsoncxx::document::view, bsoncxx::document::value> purchase_doc = bsoncxx::builder::basic::make_document(
@@ -397,6 +418,7 @@ void MongoDB::addPurchase(const std::string& username, const std::string& game_t
             bsoncxx::builder::basic::kvp("username", username),
             bsoncxx::builder::basic::kvp("game_title", game_title),
             bsoncxx::builder::basic::kvp("num_copies", num_copies),
+            bsoncxx::builder::basic::kvp("price", price),
             bsoncxx::builder::basic::kvp("purchase_date", bsoncxx::types::b_date(std::chrono::system_clock::now()))
         );
         purchaseCollection.insert_one(purchase_doc);

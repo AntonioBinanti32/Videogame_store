@@ -1,3 +1,5 @@
+import json
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import requests
 import configparser
@@ -10,6 +12,9 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 backend_url = config.get('backend', 'backend_url')
+
+#TODO: Fare casi crud di game per amministratore
+#TODO: implementare giochi suggeriti
 
 
 def is_user_logged_in():
@@ -61,9 +66,33 @@ def home():
 
         actualUser = getUserInformation()
 
-        response_games = requests.get(f'{backend_url}/getGames', headers = getHeaders())
+        response_games = requests.get(f'{backend_url}/getGames', headers=getHeaders())
         games = response_games.json()
-        return render_template('home.html', games=games, actualUser=actualUser)
+
+        # Recupera i parametri di ricerca e filtro dalla richiesta
+        search_query = request.args.get('search', '')
+        selected_genre = request.args.get('genre', '')
+        min_price = request.args.get('min_price', '')
+        max_price = request.args.get('max_price', '')
+
+        # Filtra i giochi in base alla ricerca
+        if search_query:
+            games = [game for game in games if search_query.lower() in game['title'].lower()]
+
+        # Filtra i giochi in base al genere
+        if selected_genre:
+            games = [game for game in games if game['genre'] == selected_genre]
+
+        # Filtra i giochi in base al prezzo
+        if min_price:
+            games = [game for game in games if game['price'] >= float(min_price)]
+        if max_price:
+            games = [game for game in games if game['price'] <= float(max_price)]
+
+        # Recupera i generi dei giochi
+        genres = list(set(game['genre'] for game in games))
+
+        return render_template('home.html', games=games, genres=genres, actualUser=actualUser)
     except requests.exceptions.HTTPError as http_err:
         flash('Login failed: invalid credentials')
     except requests.exceptions.ConnectionError as conn_err:
@@ -74,27 +103,12 @@ def home():
         flash('An unexpected error occurred: please try again later')
     return redirect(url_for('login'))
 
+
 @app.route('/game/<string:gameTitle>')
 def game(gameTitle):
     response = requests.get(f'{backend_url}/getGameByTitle/{gameTitle}', headers = getHeaders())
     game = response.json()
     return render_template('game.html', game=game)
-
-
-@app.route('/cart')
-def cart():
-    if 'cart' not in session:
-        session['cart'] = []
-    cart_items = session['cart']
-    return render_template('cart.html', cart_items=cart_items)
-
-
-@app.route('/add_to_cart/<string:gameTitle>')
-def add_to_cart(gameTitle):
-    if 'cart' not in session:
-        session['cart'] = []
-    session['cart'].append(gameTitle)
-    return redirect(url_for('cart'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -147,9 +161,8 @@ def signup():
 @app.route('/reviews/<string:gameTitle>', methods=['GET', 'POST'])
 def reviews(gameTitle):
     if request.method == 'POST':
-        # Ottieni i dati del form e aggiungi il gameTitle e il rating
         review_text = request.form.get('review')
-        rating = int(request.form.get('rating'))  # Converti il rating in intero
+        rating = int(request.form.get('rating'))
         username = session.get('user')
         review_data = {
             'username': username,
@@ -164,7 +177,7 @@ def reviews(gameTitle):
             response.raise_for_status()
             flash('Review added successfully!', 'success')
         except requests.exceptions.RequestException as e:
-            flash('Failed to add review. Please try again later.', 'danger')
+            flash(f"Failed to add review: you can isert only one review for a game.", 'danger')
 
         return redirect(url_for('game', gameTitle=gameTitle))
 
@@ -175,7 +188,117 @@ def reviews(gameTitle):
         return render_template('game.html', gameTitle=gameTitle)
     return render_template('game.html', gameTitle=gameTitle)
 
+@app.route('/cart', methods = ['GET'])
+def cart():
+    try:
+        if not is_user_logged_in():
+            return redirect(url_for('login'))
 
+        username = session.get('user')
+        response = requests.get(f'{backend_url}/getReservations/{username}', headers=getHeaders())
+        response.raise_for_status()
+        cart_items = response.json()
+        return render_template('cart.html', cart_items=cart_items)
+    except requests.exceptions.HTTPError as http_err:
+        flash('Failed to fetch cart: invalid credentials')
+    except requests.exceptions.ConnectionError as conn_err:
+        flash('Connection error: please try again later')
+    except requests.exceptions.Timeout as timeout_err:
+        flash('Request timed out: please try again later')
+    except requests.exceptions.RequestException as req_err:
+        flash('An unexpected error occurred: please try again later')
+    return redirect(url_for('home'))
+
+@app.route('/add_to_cart/<string:gameTitle>', methods=['GET', 'POST'])
+def add_to_cart(gameTitle):
+    """if 'cart' not in session:
+        session['cart'] = []
+    session['cart'].append(gameTitle)
+    return redirect(url_for('cart'))"""
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+
+    quantity = int(request.form.get('quantity'))
+    username = session.get('user')
+    review_data = {
+        'username': username,
+        'gameTitle': gameTitle,
+        'numCopies': quantity
+    }
+    try:
+        response = requests.post(f'{backend_url}/addReservation', headers = getHeaders(), json=review_data) #TODO: da rivedere
+        response.raise_for_status()
+        flash('Game added successfully to cart!', 'success')
+    except requests.exceptions.RequestException as e:
+        flash(f"Failed to add game in cart.", 'danger')
+
+    return redirect(url_for('game', gameTitle=gameTitle))
+
+
+@app.route('/remove_from_cart/<string:reservation_id>', methods=['POST'])
+def remove_from_cart(reservation_id):
+    try:
+        if not is_user_logged_in():
+            return redirect(url_for('login'))
+        response = requests.delete(f'{backend_url}/deleteReservation/{reservation_id}', headers=getHeaders())
+        response.raise_for_status()
+
+        flash('Game removed from cart successfully!', 'success')
+    except requests.exceptions.HTTPError as http_err:
+        flash('Failed to remove game from cart: invalid credentials', 'danger')
+    except requests.exceptions.ConnectionError as conn_err:
+        flash('Connection error: please try again later', 'danger')
+    except requests.exceptions.Timeout as timeout_err:
+        flash('Request timed out: please try again later', 'danger')
+    except requests.exceptions.RequestException as req_err:
+        flash('An unexpected error occurred: please try again later', 'danger')
+
+    return redirect(url_for('cart'))
+
+@app.route('/checkout', methods=['GET', 'POST'])
+def checkout():
+    try:
+        if not is_user_logged_in():
+            return redirect(url_for('login'))
+
+        if request.method == 'POST':
+            cart_items = request.form.get('cart_items')
+            if cart_items:
+                cart_items = json.loads(cart_items)
+
+            if not cart_items:
+                flash('Your cart is empty.', 'danger')
+                return redirect(url_for('cart'))
+
+            username = session.get('user')
+            # Loop through each item in the cart and create a purchase request
+            for item in cart_items:
+                purchase_data = {
+                    'username': username,
+                    'gameTitle': item['game_title'],
+                    'numCopies': item['num_copies']
+                }
+                response = requests.post(f'{backend_url}/addPurchase', json=purchase_data, headers=getHeaders())
+                response.raise_for_status()
+
+                # After successfully adding the purchase, remove the item from the cart
+                reservation_id = item['_id']['$oid']
+                remove_response = requests.delete(f'{backend_url}/deleteReservation/{reservation_id}', headers=getHeaders())
+                remove_response.raise_for_status()
+
+            flash('Order placed successfully!', 'success')
+            return redirect(url_for('checkout'))
+
+        else:  # GET request
+            username = session.get('user')
+            response = requests.get(f'{backend_url}/getPurchases/{username}', headers=getHeaders())
+            response.raise_for_status()
+            purchases = response.json()
+            return render_template('checkout.html', purchases=purchases)
+
+    except requests.exceptions.RequestException as e:
+        flash('An error occurred while processing your request. Please try again later.', 'danger')
+        return redirect(url_for('cart'))
 
 @app.route('/logout')
 def logout():

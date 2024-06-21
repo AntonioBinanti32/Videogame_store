@@ -1,3 +1,13 @@
+/*
+#TODO: fare css barra di ricerca
+#TODO: Fare css di add to cart e reviews in game.html
+#TODO: Fare css di cart in cart.html
+#TODO: Fare css di cart in purchases.html
+#TODO: implementare check out e i miei acquisti
+#TODO: Fare casi crud di game per amministratore
+TODO: implementare giochi suggeriti
+*/
+
 /* Reset dei margini e padding per tutti gli elementi */
 * {
     margin: 0;
@@ -385,6 +395,22 @@ h1 {
 
 .user-dropdown a:hover {
     background-color: #45a049;  /* Verde scuro al passaggio del mouse */
+}
+
+.reset-button {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-left: 10px;
+    background-color: #f44336; /* Colore di sfondo rosso */
+    color: white; /* Colore del testo */
+    text-align: center;
+    text-decoration: none;
+    border-radius: 5px; /* Angoli arrotondati */
+    border: none;
+}
+
+.reset-button:hover {
+    background-color: #d32f2f; /* Colore di sfondo rosso scuro al passaggio del mouse */
 }
 
 /* Stile per i link di login e signup */

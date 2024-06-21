@@ -42,7 +42,7 @@
                     <img src="{{ session.get('user_image') }}" alt="User" class="user-icon">
                     <a> {{ session.user }} </a>
                     <div class="user-dropdown">
-                        <a href="{{ url_for('reviews', gameTitle='defaultGameTitle') }}">My Reviews</a>
+                        <a href="{{ url_for('checkout', gameTitle='defaultGameTitle') }}">My Purchases</a>
                         <a href="{{ url_for('logout') }}">Logout</a>
                     </div>
                 </div>

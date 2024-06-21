@@ -5,7 +5,16 @@
     <h1>{{ game.title }}</h1>
     <div class="game-informations">
         <div class="game-text">
-            <p>{{ game.description }}</p>
+            <p>Genre: {{ game.genre }}</p>
+            <p>Release Date: {{ game.release_date | dateformat }}</p>
+            <p>Developer: {{ game.developer }}</p>
+            <p>Description:</p>
+            <div class="game-description">
+                <p>{{ game.description }}</p>
+            </div>
+            {% if admin %}
+                <p>Stock: {{ game.stock }}</p>
+            {% endif %}
             <p>Price: {{ game.price }}</p>
         </div>
         <img src="{{ game.image_url }}" alt="{{ game.name }}" class="game-image">
@@ -18,21 +27,28 @@
         <button type="submit">Add to Cart</button>
     </form>
 
+    <!-- Bottoni di aggiornamento ed eliminazione del gioco per gli admin -->
+    {% if admin %}
+        <a href="{{ url_for('update_game_form', gameTitle=game.title) }}" class="btn btn-primary">Update Game</a>
+        <form action="{{ url_for('delete_game', gameTitle=game.title) }}" method="post">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this game?')">Delete Game</button>
+        </form>
+    {% endif %}
+
+    <!-- Form per aggiungere una recensione -->
     <form action="{{ url_for('reviews', gameTitle=game.title) }}" method="post">
-    <textarea name="review" placeholder="Leave a review" required></textarea>
-    <div class="rating">
-        <input type="radio" id="star5" name="rating" value="5"><label for="star5">&#9733;</label>
-        <input type="radio" id="star4" name="rating" value="4"><label for="star4">&#9733;</label>
-        <input type="radio" id="star3" name="rating" value="3"><label for="star3">&#9733;</label>
-        <input type="radio" id="star2" name="rating" value="2"><label for="star2">&#9733;</label>
-        <input type="radio" id="star1" name="rating" value="1" required><label for="star1">&#9733;</label>
-    </div>
-    <button type="submit">Submit Review</button>
+        <textarea name="review" placeholder="Leave a review" required></textarea>
+        <div class="rating">
+            <input type="radio" id="star5" name="rating" value="5"><label for="star5">&#9733;</label>
+            <input type="radio" id="star4" name="rating" value="4"><label for="star4">&#9733;</label>
+            <input type="radio" id="star3" name="rating" value="3"><label for="star3">&#9733;</label>
+            <input type="radio" id="star2" name="rating" value="2"><label for="star2">&#9733;</label>
+            <input type="radio" id="star1" name="rating" value="1" required><label for="star1">&#9733;</label>
+        </div>
+        <button type="submit">Submit Review</button>
     </form>
 
-
-
-    <!-- Display existing reviews -->
+    <!-- Visualizzazione delle recensioni esistenti -->
     <div class="reviews">
         <h2>Reviews</h2>
         {% if game.reviews %}

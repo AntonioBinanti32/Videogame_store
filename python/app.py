@@ -14,6 +14,7 @@ config.read('config.ini')
 backend_url = config.get('backend', 'backend_url')
 
 #TODO: Fare casi crud di game per amministratore in base.html, game.html
+#TODO: sistemare nav bar admin
 #TODO: Fare pagina fatturato
 #TODO: Implementare users.html
 #TODO: implementare giochi suggeriti
@@ -64,7 +65,21 @@ def dateformat(value):
         print(f"Errore nella formattazione del timestamp: {e}")
         return "Data non disponibile"
 
+@app.template_filter('dateformat_input')
+def dateformat_input(value):
+    try:
+        if isinstance(value, dict) and '$date' in value:
+            # Se il valore è un oggetto data MongoDB
+            dt_object = datetime.utcfromtimestamp(value['$date'] / 1000.0)
+        else:
+            raise ValueError("Formato data non riconosciuto")
 
+        # Formatta la data come richiesto per l'input di tipo 'date'
+        formatted_date = dt_object.strftime("%Y-%m-%d")
+        return formatted_date
+    except Exception as e:
+        print(f"Errore nella formattazione del timestamp per input: {e}")
+        return ""
 
 @app.route('/')
 def home():
@@ -118,14 +133,56 @@ def game(gameTitle):
     game = response.json()
     return render_template('game.html', game=game, admin=is_admin())
 
-@app.route('/update_game', methods=['POST'])
-def update_game():
+@app.route('/create_game', methods=['GET', 'POST'])
+def create_game():
+    if request.method == 'POST':
+
+        data = {
+            'title': request.form['title'],
+            'genre': request.form['genre'],
+            'releaseDate': request.form['releaseDate'],
+            'developer': request.form['developer'],
+            'price': float(request.form['price']),
+            'stock': int(request.form['stock']),
+            'description': request.form['description'],
+            'imageUrl': request.form['imageUrl']
+        }
+
+        # Converti la data di rilascio dal formato 'YYYY-MM-DD' al formato timestamp
+
+
+        try:
+            response = requests.post(f'{backend_url}/addGame', json=data, headers=getHeaders())
+            response.raise_for_status()
+            flash('Game created successfully!', 'success')
+            return redirect(url_for('home'))
+        except requests.exceptions.RequestException as e:
+            flash(f"Failed to create game: {e}", 'danger')
+            return redirect(url_for('create_game'))
+    return render_template('create_game.html')
+
+
+@app.route('/update_game/<string:gameTitle>', methods=['GET'])
+def update_game_form(gameTitle):
+    if not is_admin():
+        flash('Only admin users can update games.', 'danger')
+        return redirect(url_for('home'))
+
+    # Recupera i dettagli del gioco per il form di aggiornamento
+    response = requests.get(f'{backend_url}/getGameByTitle/{gameTitle}', headers=getHeaders())
+    game = response.json()
+
+    return render_template('update_game.html', game=game)
+
+
+@app.route('/update_game/<string:gameTitle>', methods=['POST'])
+def update_game(gameTitle):
     if not is_admin():
         flash('Only admin users can update games.', 'danger')
         return redirect(url_for('home'))
 
     update_data = {
-        'title': request.form['title'],
+        'title': gameTitle,
         'newGenre': request.form['newGenre'],
         'newReleaseDate': request.form['newReleaseDate'],
         'newDeveloper': request.form['newDeveloper'],
@@ -142,9 +199,10 @@ def update_game():
     except requests.exceptions.RequestException as e:
         flash(f"Failed to update game: {str(e)}", 'danger')
 
-    return redirect(url_for('home'))
+    return redirect(url_for('game', gameTitle=gameTitle))
 
-@app.route('/delete_game/<string:gameTitle>', methods=['DELETE'])
+
+@app.route('/delete_game/<string:gameTitle>', methods=['POST'])
 def delete_game(gameTitle):
     if not is_admin():
         flash('Only admin users can delete games.', 'danger')
@@ -158,6 +216,7 @@ def delete_game(gameTitle):
         flash(f"Failed to delete game: {str(e)}", 'danger')
 
     return redirect(url_for('home'))
+
 
 
 @app.route('/login', methods=['GET', 'POST'])

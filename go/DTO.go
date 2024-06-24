@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type ResponseToken struct {
 	Message string `json:"message"`
 	Token   string `json:"token"`
@@ -104,4 +106,87 @@ type DeleteReviewRequest struct {
 	GameTitle string `json:"gameTitle"`
 }
 
-//TODO: Implementare altri DTO
+type WebhookPayload struct {
+	Error   bool   `json:"error"`
+	Event   string `json:"event"`
+	Message string `json:"message"`
+}
+
+// Definizione della struttura della notifica
+type Notification struct {
+	ID        int
+	Message   string
+	Timestamp time.Time
+}
+
+// Definizione della struttura per lo stato di lettura
+type NotificationRead struct {
+	NotificationID int
+	UserID         string
+	Read           bool
+}
+
+type markNotificationAsReadRequest struct {
+	NotificationID int
+	Username       string
+}
+
+type User struct {
+	ID struct {
+		Oid string `json:"$oid"`
+	} `json:"_id"`
+	CreatedAt struct {
+		Date int64 `json:"$date"`
+	} `json:"created_at"`
+	ImageURL     string        `json:"image_url"`
+	Password     string        `json:"password"`
+	Reservations []Reservation `json:"reservations"`
+	Reviews      []Review      `json:"reviews"`
+	Purchases    []Purchase    `json:"purchases"`
+	Username     string        `json:"username"`
+}
+
+type Reservation struct {
+	GameTitle       string `json:"game_title"`
+	ReservationDate struct {
+		Date int64 `json:"$date"`
+	} `json:"reservation_date"`
+	UserID struct {
+		Oid string `json:"$oid"`
+	} `json:"user_id"`
+	Username string `json:"username"` // This field seems redundant but included for consistency
+}
+
+type Review struct {
+	CreatedAt struct {
+		Date int64 `json:"$date"`
+	} `json:"created_at"`
+	GameTitle  string `json:"game_title"`
+	Rating     int    `json:"rating"`
+	ReviewText string `json:"review_text"`
+}
+
+type Purchase struct {
+	ID struct {
+		Oid string `json:"$oid"`
+	} `json:"_id"`
+	GameTitle    string  `json:"game_title"`
+	NumCopies    int     `json:"num_copies"`
+	Price        float64 `json:"price"`
+	PurchaseDate struct {
+		Date int64 `json:"$date"`
+	} `json:"purchase_date"`
+	Username string `json:"username"`
+}
+
+type Game struct {
+	Title       string    `json:"title"`
+	Genre       string    `json:"genre"`
+	ReleaseDate time.Time `json:"release_date"`
+	Developer   string    `json:"developer"`
+	Price       float64   `json:"price"`
+	Stock       int       `json:"stock"`
+	Description string    `json:"description"`
+	ImageURL    string    `json:"image_url"`
+	Reviews     struct{}  `json:"reviews"`
+}

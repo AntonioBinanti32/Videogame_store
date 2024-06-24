@@ -1,9 +1,10 @@
-import json
-
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import requests
 import configparser
 from datetime import datetime
+import json
+
+#from database.database import db, Notification, User
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -12,10 +13,17 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 backend_url = config.get('backend', 'backend_url')
+#sqlalchemy_database_uri = config.get('datavbase', 'sqlalchemy_database_uri')
 
-#TODO: Implementare users.html
-#TODO: Implementare sistema notifiche
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///notifications.db'
+#db.init_app(app)
+
+#TODO: Implementare sistema notifiche, forse meglio spostare tutta la gestione su go, vedere perche non si visualizza titolo game
+#TODO: Implementare notifications in nav bar
+#TODO: implmentare pagina notification.html
 #TODO: implementare giochi suggeriti
+#TODO: Completare styles.css
+#TODO: Implementare users.html
 
 
 def is_user_logged_in():
@@ -112,6 +120,8 @@ def home():
 
         # Recupera i generi dei giochi
         genres = list(set(game['genre'] for game in games))
+
+
 
         return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin())
     except requests.exceptions.HTTPError as http_err:
@@ -251,6 +261,7 @@ def signup():
             response.raise_for_status()
             session['user'] = response.json()['user']
             session['token'] = response.json()['token']
+            #add_user(response.json()['user'])
             return redirect(url_for('home'))
         except requests.exceptions.HTTPError as http_err:
             flash('Signup failed: invalid credentials')
@@ -431,11 +442,56 @@ def purchases():
         flash('An unexpected error occurred: please try again later')
     return redirect(url_for('home'))
 
+@app.route('/notifications', methods=['GET'])
+def notifications():
+    try:
+        if not is_user_logged_in():
+            return redirect(url_for('login'))
+
+        username = session.get('user')
+
+        response = requests.get(f'{backend_url}/getAllNotifications/{username}')
+        response.raise_for_status()
+        notifications = response.json()
+
+        return render_template('notifications.html', notifications=notifications)
+    except requests.exceptions.HTTPError as http_err:
+        flash('Failed to fetch notifications: invalid credentials')
+    except requests.exceptions.ConnectionError as conn_err:
+        flash('Connection error: please try again later')
+    except requests.exceptions.Timeout as timeout_err:
+        flash('Request timed out: please try again later')
+    except requests.exceptions.RequestException as req_err:
+        flash('An unexpected error occurred: please try again later')
+    return redirect(url_for('home'))
+
+
+@app.route('/mark_as_read/<int:notification_id>', methods=['POST'])
+def mark_as_read(notification_id):
+    try:
+
+        if not is_user_logged_in():
+            return redirect(url_for('login'))
+
+        username = session.get('user')
+        response = requests.post(f'{backend_url}/markNotificationAsRead/{notification_id}/{username}')
+        response.raise_for_status()
+        return redirect(url_for('notifications', username=username))
+
+    except requests.exceptions.HTTPError as http_err:
+        flash('Failed to fetch notifications: invalid credentials')
+    except requests.exceptions.ConnectionError as conn_err:
+        flash('Connection error: please try again later')
+    except requests.exceptions.Timeout as timeout_err:
+        flash('Request timed out: please try again later')
+    except requests.exceptions.RequestException as req_err:
+        flash('An unexpected error occurred: please try again later')
+    return redirect(url_for('home'))
+
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect(url_for('home'))
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=5000, debug=True)

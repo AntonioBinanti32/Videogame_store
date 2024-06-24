@@ -50,6 +50,7 @@ public:
     void login(const std::string& username, const std::string& pwd) noexcept(false);
     void addGame(const std::string& title, const std::string& genre, const std::string& release_date, const std::string& developer, double price, int stock, const std::string& description, const std::string& imageUrl);
     nlohmann::json MongoDB::getUser(const std::string& username);
+    nlohmann::json MongoDB::getAllUsers();
     nlohmann::json getGames();
     nlohmann::json getGame(const std::string& game_id);
     nlohmann::json MongoDB::getGameByTitle(const std::string& game_id);

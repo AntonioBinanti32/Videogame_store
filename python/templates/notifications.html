@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>All Notifications</h1>
+
+{% if notifications %}
+    <h2>All Notifications</h2>
+    <ul>
+        {% for notification in notifications %}
+            <li class="{% if not notification.read %}unread{% endif %}">
+                <strong>Message:</strong> {{ notification.message }}<br>
+                <strong>Timestamp:</strong> {{ notification.timestamp }}<br>
+                {% if not notification.read %}
+                    <form action="{{ url_for('mark_as_read', notification_id=notification.id) }}" method="post">
+                        <input type="hidden" name="username" value="{{ username }}">
+                        <button type="submit">Mark as Read</button>
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No notifications found.</p>
+{% endif %}
+
+{% endblock %}

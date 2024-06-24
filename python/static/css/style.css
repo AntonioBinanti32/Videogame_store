@@ -6,6 +6,7 @@
 #TODO: Fare css di update_game.html
 #TODO: Fare css di create_game.html
 #TODO: Fare css di purchases.html
+#TODO: Fare css di notifications.html
 #TODO: implementare check out e i miei acquisti
 #TODO: Fare casi crud di game per amministratore
 TODO: implementare giochi suggeriti
@@ -559,6 +560,12 @@ h1 {
 .rating label:hover ~ label {
     color: #ffcc00; /* Color all stars up to the hovered one */
 }
+
+.unread {
+    font-weight: bold;
+    color: red;
+}
+
 
 
 

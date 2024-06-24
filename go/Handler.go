@@ -1,12 +1,11 @@
 package main
 
-// TODO: Implementare token
-// TODO: Implementare accesso esclusivo ad admin per alcune operazioni
 // TODO: Implementare logica delle notifiche
 // TODO: Implementare handler per recommendations
 
 import (
 	"bufio"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -114,7 +113,26 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string
 	json.NewEncoder(w).Encode(jsonMessage)
 }
 
-func AddGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
+func GetAllUsersHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
+
+	message := "getAllUsers***"
+
+	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", err), http.StatusInternalServerError)
+		return
+	}
+	if jsonResponse.Error {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
+		return
+	}
+
+	jsonMessage := getJsonList(jsonResponse.Message)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jsonMessage)
+}
+
+func AddGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, webhookPort string, db *sql.DB) {
 	var req AddGameRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -136,6 +154,10 @@ func AddGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string
 		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
 		return
 	}
+
+	notify := fmt.Sprintf("'%s' is now available in our store: take a look!", req.Title)
+
+	addNotification(db, notify)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(jsonResponse)
@@ -273,7 +295,7 @@ func GetReviewByGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPor
 	json.NewEncoder(w).Encode(jsonMessage)
 }
 
-func AddReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
+func AddReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, db *sql.DB) {
 	var req AddReviewRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -295,6 +317,9 @@ func AddReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort stri
 		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
 		return
 	}
+
+	notify := fmt.Sprintf("User %s wrote a review for game %s", req.Username, req.GameTitle)
+	addNotificationToAdmin(db, notify)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(jsonResponse)
@@ -327,7 +352,7 @@ func AddReservationHandler(w http.ResponseWriter, r *http.Request, socketTCPPort
 	json.NewEncoder(w).Encode(jsonResponse)
 }
 
-func AddPurchaseHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
+func AddPurchaseHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, db *sql.DB) {
 	var req AddPurchaseRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -348,6 +373,33 @@ func AddPurchaseHandler(w http.ResponseWriter, r *http.Request, socketTCPPort st
 	if jsonResponse.Error {
 		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
 		return
+	}
+
+	notify := fmt.Sprintf("%d copies of game '%s' were purchased by user %s", req.NumCopies, req.GameTitle, actualUser)
+	addNotificationToAdmin(db, notify)
+
+	message_2 := "getNumCopiesByGameTitle*" + req.GameTitle + "*" + actualUser + "*" + token + "*"
+	gameResponse, err := communicateWithBackend(message_2, socketTCPPort)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to fetch game details after purchase: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if gameResponse.Error {
+		http.Error(w, fmt.Sprintf("Failed to fetch game details after purchase: %v", gameResponse.Message), http.StatusInternalServerError)
+		return
+	}
+
+	stock, err := strconv.Atoi(gameResponse.Message)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to fetch game details after purchase: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if stock <= 1 {
+		notify := fmt.Sprintf("The Game '%s' has only %d copies left!", req.GameTitle, stock)
+		addNotificationToAdmin(db, notify)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -446,7 +498,7 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request, socketTCPPort str
 	json.NewEncoder(w).Encode(jsonResponse)
 }
 
-func UpdateGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
+func UpdateGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, db *sql.DB) {
 	var req UpdateGameRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -468,6 +520,9 @@ func UpdateGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort str
 		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message), http.StatusInternalServerError)
 		return
 	}
+
+	notify := fmt.Sprintf("The Game '%s' is being modified, see what's new!", req.Title)
+	addNotification(db, notify)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(jsonResponse)
@@ -738,4 +793,63 @@ func getJsonList(message string) interface{} {
 		log.Fatalf("Errore durante la decodifica del JSON: %v", err)
 	}
 	return result
+}
+
+func getAllNotificationsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB, username string) {
+
+	notifications, err := getAllNotifications(db, username)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(notifications)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to encode notifications: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
+
+func getUnreadNotificationsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB, username string) {
+
+	notifications, err := getUnreadNotifications(db, username)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(notifications)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to encode notifications: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
+
+func markNotificationAsReadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	var req markNotificationAsReadRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to decode request body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	notificationID := req.NotificationID
+	username := req.Username
+
+	err = markNotificationAsRead(db, int64(notificationID), username)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to communicate with backend: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }

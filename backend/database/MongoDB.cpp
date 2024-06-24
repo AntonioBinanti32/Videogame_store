@@ -111,6 +111,20 @@ nlohmann::json MongoDB::getUser(const std::string& username) {
     }
 }
 
+nlohmann::json MongoDB::getAllUsers() {
+    nlohmann::json users;
+    try {
+        auto cursor = userCollection.find({});
+        for (auto&& doc : cursor) {
+            users.push_back(nlohmann::json::parse(bsoncxx::to_json(doc)));
+        }
+    }
+    catch (std::exception& e) {
+        throw  UserNotFoundException("Errore durante il recupero degli utenti");
+    }
+    return users;
+}
+
 // Ottenimento della lista dei giochi
 nlohmann::json MongoDB::getGames() {
     nlohmann::json games;

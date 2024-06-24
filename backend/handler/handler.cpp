@@ -112,6 +112,39 @@ namespace handler {
         }
     }
 
+    void handleGetAllUsers(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string actualUser, token;
+        if (std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
+            try {
+                MongoDB* mongoDb = MongoDB::getInstance();
+                nlohmann::json user = mongoDb->getAllUsers();
+                std::string response = generateJson("", user.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                serverSocket.sendMessage(response.c_str(), clientSocket);
+            }
+            catch (const UserNotFoundException& e) {
+                std::string error = generateJson("", "Get all users failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get all users failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+            catch (const std::exception& e) {
+                std::string error = generateJson("", "Get all users failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            std::string response = generateJson("", "Invalid get all users format", true);
+            serverSocket.sendMessage(response.c_str(), clientSocket);
+            return;
+        }
+    }
+
     void handleAddGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
         std::string title, genre, release_date, developer, price_str, stock_str, description, imageUrl, actualUser, token;
@@ -1219,6 +1252,40 @@ namespace handler {
         }
     }
 
+    void handleGetNumCopiesByGameTitle(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+        std::istringstream iss(message);
+        std::string game_title, actualUser, token;
+        if (std::getline(iss, game_title, '*') && std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
+
+            try {
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    // Recupera il numero di copie disponibili per il gioco specificato
+                    nlohmann::json game = mongoDb->getGameByTitle(game_title);
+                    int stock = game["stock"].get<int>();
+                    std::string numberStr = std::to_string(stock);
+                    std::string response = generateJson("", numberStr);
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token", true);
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
+            }
+            catch (GetGameException& e) {
+                std::string error = generateJson("", "Get number of copies of game failed: " + std::string(e.what()), true);
+                serverSocket.sendMessage(error.c_str(), clientSocket);
+                return;
+            }
+        }
+        else {
+            std::string response = generateJson("", "Invalid get number of copies by game format", true);
+            serverSocket.sendMessage(response.c_str(), clientSocket);
+            return;
+        }
+    }
+
     //TODO: Da implementare handleDeleteRecommendation
     /*
     void handleDeleteRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
@@ -1349,8 +1416,6 @@ namespace handler {
         return urlString;
     }
 
-
-
     void handleClient(SocketTcp& serverSocket, SOCKET clientSocket) {
         char recvbuf[512];
         int recvbuflen = sizeof(recvbuf);
@@ -1378,6 +1443,9 @@ namespace handler {
                     }
                     else if (message.rfind("getUser*", 0) == 0) {
                         handleGetUser(message.substr(8), serverSocket, clientSocket);
+                    }
+                    else if (message.rfind("getAllUsers*", 0) == 0) {
+                        handleGetAllUsers(message.substr(12), serverSocket, clientSocket);
                     }
                     else if (message.rfind("addGame*", 0) == 0) {
                         handleAddGame(message.substr(8), serverSocket, clientSocket);
@@ -1461,6 +1529,9 @@ namespace handler {
                     else if (message.rfind("deleteRecommendation*", 0) == 0) {
                         handleDeleteRecommendation(message.substr(20), serverSocket, clientSocket);
                     }*/
+                    else if (message.rfind("getNumCopiesByGameTitle*", 0) == 0) {
+                        handleGetNumCopiesByGameTitle(message.substr(24), serverSocket, clientSocket);
+                    }
                     else if (message == "exit") {
                         const char* response = "Goodbye!";
                         if (!serverSocket.sendMessage(response, clientSocket)) {

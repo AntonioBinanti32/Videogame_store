@@ -14,6 +14,7 @@ namespace handler {
     void handleLogin(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleSignup(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
+    void handleGetAllUsers(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleAddGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetGames(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
@@ -41,6 +42,7 @@ namespace handler {
     void handleDeletePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleDeleteReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     //TODO: void handleDeleteRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket)
+    void handleGetNumCopiesByGameTitle(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     bool isGameAvailableForPurchase(const std::string& game_title, int num_copies_to_purchase);
     bool removeReservationsForGame(const std::string& username, const std::string& game_title, int num_copies);
     std::string generateJwtToken(const std::string& username);

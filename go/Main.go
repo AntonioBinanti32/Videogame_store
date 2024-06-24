@@ -1,19 +1,5 @@
 package main
 
-// TODO: Implementare notifiche:
-/*// Dopo aver aggiunto il gioco, invia un webhook al frontend Flask
-  payload := WebhookPayload{
-      Event:     "new_game_added",
-      GameTitle: "Nome del gioco aggiunto", // Sostituisci con il nome effettivo del gioco aggiunto
-      // Altri campi pertinenti all'evento
-  }
-
-  if err := notify(payload); err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-      return
-  }*/
-// TODO: Implementare endpoints per recommendations
-
 import (
 	"fmt"
 	"log"

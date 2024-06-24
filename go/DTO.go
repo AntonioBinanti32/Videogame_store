@@ -106,20 +106,12 @@ type DeleteReviewRequest struct {
 	GameTitle string `json:"gameTitle"`
 }
 
-type WebhookPayload struct {
-	Error   bool   `json:"error"`
-	Event   string `json:"event"`
-	Message string `json:"message"`
-}
-
-// Definizione della struttura della notifica
 type Notification struct {
 	ID        int
 	Message   string
 	Timestamp time.Time
 }
 
-// Definizione della struttura per lo stato di lettura
 type NotificationRead struct {
 	NotificationID int
 	UserID         string
@@ -154,7 +146,7 @@ type Reservation struct {
 	UserID struct {
 		Oid string `json:"$oid"`
 	} `json:"user_id"`
-	Username string `json:"username"` // This field seems redundant but included for consistency
+	Username string `json:"username"`
 }
 
 type Review struct {

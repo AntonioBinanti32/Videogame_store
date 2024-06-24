@@ -18,9 +18,7 @@ backend_url = config.get('backend', 'backend_url')
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///notifications.db'
 #db.init_app(app)
 
-#TODO: Implementare sistema notifiche, forse meglio spostare tutta la gestione su go, vedere perche non si visualizza titolo game
-#TODO: Implementare notifications in nav bar
-#TODO: implmentare pagina notification.html
+#TODO: Sistemare logica errori
 #TODO: implementare giochi suggeriti
 #TODO: Completare styles.css
 #TODO: Implementare users.html

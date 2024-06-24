@@ -1,6 +1,5 @@
 package main
 
-// TODO: Implementare logica delle notifiche
 // TODO: Implementare handler per recommendations
 
 import (

@@ -138,8 +138,8 @@ func getUnreadNotifications(db *sql.DB, username string) ([]Notification, error)
 	rows, err := db.Query(`
 		SELECT n.id, n.message, n.timestamp
 		FROM notifications n
-		LEFT JOIN notification_reads nr ON n.id = nr.notification_id AND nr.username = ?
-		WHERE nr.read IS NULL OR nr.read = 0;
+		LEFT JOIN notification_reads nr ON n.id = nr.notification_id 
+		WHERE nr.username = ? AND (nr.read IS NULL OR nr.read = 0);
 	`, username)
 	if err != nil {
 		return nil, err
@@ -165,7 +165,8 @@ func getAllNotifications(db *sql.DB, userID string) ([]Notification, error) {
 	rows, err := db.Query(`
 		SELECT n.id, n.message, n.timestamp
 		FROM notifications n
-		LEFT JOIN notification_reads nr ON n.id = nr.notification_id AND nr.username = ?;
+		LEFT JOIN notification_reads nr ON n.id = nr.notification_id 
+		WHERE nr.username = ?;
 	`, userID)
 	if err != nil {
 		return nil, err

@@ -6,6 +6,17 @@
     <title>Game Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            {% if unread_notifications %}
+                let notifications = {{ unread_notifications | tojson }};
+                notifications.forEach(function(notification) {
+                    alert("New Notification: " + notification.Message);
+                });
+            {% endif %}
+        });
+    </script>
 </head>
 <body>
     <header>
@@ -33,6 +44,9 @@
             {% if 'user' in session %}
                 <div class="user-menu">
                     <img src="{{ session.get('user_image') }}" alt="User" class="user-icon">
+                    {% if unread_notifications %}
+                        <span class="notification-count">{{ unread_notifications|length }}</span>
+                    {% endif %}
                     {% if admin %}
                         <a>ADMIN MODE</a>
                     {% else %}
@@ -40,7 +54,12 @@
                     {% endif %}
                     <div class="user-dropdown">
                         <a href="{{ url_for('checkout', gameTitle='defaultGameTitle') }}">My Purchases</a>
-                        <a href="{{ url_for('notifications', username=session.user) }}">Notifications</a>
+                        <a href="{{ url_for('notifications', username=session.user) }}">
+                            Notifications
+                            {% if unread_notifications %}
+                                <span class="notification-count">{{ unread_notifications|length }}</span>
+                            {% endif %}
+                        </a>
                         {% if admin %}
                             <a href="{{ url_for('purchases') }}">All purchases</a>
                         {% endif %}

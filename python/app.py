@@ -121,9 +121,11 @@ def home():
         # Recupera i generi dei giochi
         genres = list(set(game['genre'] for game in games))
 
+        username = session.get('user')
+        response_notifications = requests.get(f'{backend_url}/getUnreadNotifications/{username}', )
+        unread_notifications = response_notifications.json()
 
-
-        return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin())
+        return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin(), unread_notifications=unread_notifications)
     except requests.exceptions.HTTPError as http_err:
         flash('Login failed: invalid credentials')
     except requests.exceptions.ConnectionError as conn_err:
@@ -450,11 +452,15 @@ def notifications():
 
         username = session.get('user')
 
-        response = requests.get(f'{backend_url}/getAllNotifications/{username}')
-        response.raise_for_status()
-        notifications = response.json()
+        response_2 = requests.get(f'{backend_url}/getAllNotifications/{username}')
+        response_2.raise_for_status()
+        notifications = response_2.json()
 
-        return render_template('notifications.html', notifications=notifications)
+        response_3 = requests.get(f'{backend_url}/getUnreadNotifications/{username}')
+        response_3.raise_for_status()
+        notifications_unread = response_3.json()
+
+        return render_template('notifications.html', notifications=notifications, notifications_unread=notifications_unread)
     except requests.exceptions.HTTPError as http_err:
         flash('Failed to fetch notifications: invalid credentials')
     except requests.exceptions.ConnectionError as conn_err:
@@ -474,19 +480,23 @@ def mark_as_read(notification_id):
             return redirect(url_for('login'))
 
         username = session.get('user')
-        response = requests.post(f'{backend_url}/markNotificationAsRead/{notification_id}/{username}')
+        data = {
+            'NotificationID': notification_id,
+            'Username': username
+        }
+        response = requests.post(f'{backend_url}/markNotificationAsRead', json=data)
         response.raise_for_status()
         return redirect(url_for('notifications', username=username))
 
     except requests.exceptions.HTTPError as http_err:
-        flash('Failed to fetch notifications: invalid credentials')
+        flash('Failed to mark notifications: invalid credentials')
     except requests.exceptions.ConnectionError as conn_err:
         flash('Connection error: please try again later')
     except requests.exceptions.Timeout as timeout_err:
         flash('Request timed out: please try again later')
     except requests.exceptions.RequestException as req_err:
         flash('An unexpected error occurred: please try again later')
-    return redirect(url_for('home'))
+    return redirect(url_for('notifications'))
 
 @app.route('/logout')
 def logout():

@@ -18,9 +18,9 @@ backend_url = config.get('backend', 'backend_url')
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///notifications.db'
 #db.init_app(app)
 
-#TODO: Sistemare logica errori
 #TODO: implementare giochi suggeriti
 #TODO: Completare styles.css
+#TODO: Fare checkup generale per vedere se funziona tutto
 #TODO: Implementare users.html
 
 
@@ -44,10 +44,18 @@ def getHeaders():
 
     return headers
 
+def convertToJson(message_str):
+    try:
+        message = json.loads(message_str)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Impossibile decodificare il JSON da 'message': {e}")
+    return message
+
 def getUserInformation():
     user = session.get('user')
     response_user = requests.get(f'{backend_url}/getUser/{user}', headers=getHeaders())
-    return response_user.json()
+    message = convertToJson(response_user.json()['message'])
+    return message
 
 # Definisci il filtro personalizzato per la formattazione della data
 @app.template_filter('dateformat')
@@ -94,7 +102,10 @@ def home():
         actualUser = getUserInformation()
 
         response_games = requests.get(f'{backend_url}/getGames', headers=getHeaders())
-        games = response_games.json()
+        if response_games.json()['error']:
+            flash(response_games.json()['message'])
+            return render_template('home.html', games=[], genres=[], actualUser=[], admin=False, unread_notifications=[])
+        games = convertToJson(response_games.json()['message'])
 
         # Recupera i parametri di ricerca e filtro dalla richiesta
         search_query = request.args.get('search', '')
@@ -122,6 +133,11 @@ def home():
         username = session.get('user')
         response_notifications = requests.get(f'{backend_url}/getUnreadNotifications/{username}', )
         unread_notifications = response_notifications.json()
+        if unread_notifications is None:
+            return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin(), unread_notifications=[])
+        #if unread_notifications['error']:
+        #    flash(response_notifications.json()['message'])
+        #    return render_template('home.html')
 
         return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin(), unread_notifications=unread_notifications)
     except requests.exceptions.HTTPError as http_err:
@@ -138,7 +154,10 @@ def home():
 @app.route('/game/<string:gameTitle>')
 def game(gameTitle):
     response = requests.get(f'{backend_url}/getGameByTitle/{gameTitle}', headers = getHeaders())
-    game = response.json()
+    if response.json()['error']:
+        flash(response.json()['message'])
+        return redirect(url_for('home'))
+    game = convertToJson(response.json()['message'])
     return render_template('game.html', game=game, admin=is_admin())
 
 @app.route('/create_game', methods=['GET', 'POST'])
@@ -156,11 +175,11 @@ def create_game():
             'imageUrl': request.form['imageUrl']
         }
 
-        # Converti la data di rilascio dal formato 'YYYY-MM-DD' al formato timestamp
-
-
         try:
             response = requests.post(f'{backend_url}/addGame', json=data, headers=getHeaders())
+            if response.json()['error']:
+                flash(response.json()['message'])
+                return redirect(url_for('home'))
             response.raise_for_status()
             flash('Game created successfully!', 'success')
             return redirect(url_for('home'))
@@ -178,7 +197,10 @@ def update_game_form(gameTitle):
 
     # Recupera i dettagli del gioco per il form di aggiornamento
     response = requests.get(f'{backend_url}/getGameByTitle/{gameTitle}', headers=getHeaders())
-    game = response.json()
+    if response.json()['error']:
+        flash(response.json()['message'])
+        return redirect(url_for('home'))
+    game = convertToJson(response.json()['message'])
 
     return render_template('update_game.html', game=game)
 
@@ -202,6 +224,9 @@ def update_game(gameTitle):
 
     try:
         response = requests.put(f'{backend_url}/updateGame', json=update_data, headers=getHeaders())
+        if response.json()['error']:
+            flash(response.json()['message'])
+            return redirect(url_for('home'))
         response.raise_for_status()
         flash('Game updated successfully!', 'success')
     except requests.exceptions.RequestException as e:
@@ -218,6 +243,9 @@ def delete_game(gameTitle):
 
     try:
         response = requests.delete(f'{backend_url}/deleteGame/{gameTitle}', headers=getHeaders())
+        if response.json()['error']:
+            flash(response.json()['message'])
+            return redirect(url_for('home'))
         response.raise_for_status()
         flash('Game deleted successfully!', 'success')
     except requests.exceptions.RequestException as e:
@@ -233,6 +261,9 @@ def login():
         credentials = request.form
         try:
             response = requests.post(f'{backend_url}/login', json=credentials)
+            if response.json()['error']:
+                flash(response.json()['message'])
+                return render_template('login.html')
             response.raise_for_status()  # Questo genera un'eccezione per codici di stato HTTP 4xx/5xx
             session['user'] = response.json()['user']
             session['token'] = response.json()['token']
@@ -257,11 +288,12 @@ def signup():
         user_data = request.form
         try:
             response = requests.post(f'{backend_url}/signup', json=user_data)
-            # Questo genera un'eccezione per codici di stato HTTP 4xx/5xx
+            if response.json()['error']:
+                flash(response.json()['message'])
+                return render_template('signup.html')
             response.raise_for_status()
             session['user'] = response.json()['user']
             session['token'] = response.json()['token']
-            #add_user(response.json()['user'])
             return redirect(url_for('home'))
         except requests.exceptions.HTTPError as http_err:
             flash('Signup failed: invalid credentials')
@@ -291,6 +323,9 @@ def reviews(gameTitle):
         headers = getHeaders()
         try:
             response = requests.post(f'{backend_url}/addReview', json=review_data, headers=headers)
+            if response.json()['error']:
+                flash(response.json()['message'])
+                return redirect(url_for('game', gameTitle=gameTitle))
             response.raise_for_status()
             flash('Review added successfully!', 'success')
         except requests.exceptions.RequestException as e:
@@ -301,7 +336,10 @@ def reviews(gameTitle):
     else:
         # Metodo GET per ottenere le recensioni già presenti
         response = requests.get(f'{backend_url}/getReviewByGame/{gameTitle}')
-        reviews = response.json()
+        if response.json()['error']:
+            flash(response.json()['message'])
+            return redirect(url_for('game', gameTitle=gameTitle))
+        reviews = convertToJson(response.json()['message'])
         return render_template('game.html', gameTitle=gameTitle, admin=is_admin())
     return render_template('game.html', gameTitle=gameTitle, admin=is_admin())
 
@@ -313,8 +351,11 @@ def cart():
 
         username = session.get('user')
         response = requests.get(f'{backend_url}/getReservations/{username}', headers=getHeaders())
+        if response.json()['error']:
+            flash(response.json()['message'])
+            return redirect(url_for('home'))
         response.raise_for_status()
-        cart_items = response.json()
+        cart_items = convertToJson(response.json()['message'])
         return render_template('cart.html', cart_items=cart_items, admin=is_admin())
     except requests.exceptions.HTTPError as http_err:
         flash('Failed to fetch cart: invalid credentials')
@@ -343,7 +384,10 @@ def add_to_cart(gameTitle):
         'numCopies': quantity
     }
     try:
-        response = requests.post(f'{backend_url}/addReservation', headers = getHeaders(), json=review_data) #TODO: da rivedere
+        response = requests.post(f'{backend_url}/addReservation', headers = getHeaders(), json=review_data)
+        if response.json()['error']:
+            flash(response.json()['message'])
+            return redirect(url_for('game', gameTitle=gameTitle))
         response.raise_for_status()
         flash('Game added successfully to cart!', 'success')
     except requests.exceptions.RequestException as e:
@@ -358,6 +402,9 @@ def remove_from_cart(reservation_id):
         if not is_user_logged_in():
             return redirect(url_for('login'))
         response = requests.delete(f'{backend_url}/deleteReservation/{reservation_id}', headers=getHeaders())
+        if response.json()['error']:
+            flash(response.json()['message'])
+            return redirect(url_for('cart'))
         response.raise_for_status()
 
         flash('Game removed from cart successfully!', 'success')
@@ -396,11 +443,17 @@ def checkout():
                     'numCopies': item['num_copies']
                 }
                 response = requests.post(f'{backend_url}/addPurchase', json=purchase_data, headers=getHeaders())
+                if response.json()['error']:
+                    flash(response.json()['message'])
+                    return redirect(url_for('cart'))
                 response.raise_for_status()
 
                 # After successfully adding the purchase, remove the item from the cart
                 reservation_id = item['_id']['$oid']
                 remove_response = requests.delete(f'{backend_url}/deleteReservation/{reservation_id}', headers=getHeaders())
+                if response.json()['error']:
+                    flash(response.json()['message'])
+                    return redirect(url_for('cart'))
                 remove_response.raise_for_status()
 
             flash('Order placed successfully!', 'success')
@@ -409,8 +462,11 @@ def checkout():
         else:  # GET request
             username = session.get('user')
             response = requests.get(f'{backend_url}/getPurchases/{username}', headers=getHeaders())
+            if response.json()['error']:
+                flash(response.json()['message'])
+                return redirect(url_for('cart'))
             response.raise_for_status()
-            purchases = response.json()
+            purchases = convertToJson(response.json()['message'])
             return render_template('checkout.html', purchases=purchases, admin=is_admin())
 
     except requests.exceptions.RequestException as e:
@@ -426,6 +482,9 @@ def purchases():
             return redirect(url_for('home'))
 
         response = requests.get(f'{backend_url}/getAllPurchases', headers=getHeaders())
+        if response.json()['error']:
+            flash(response.json()['message'])
+            return redirect(url_for('home'))
         response.raise_for_status()
         purchases = response.json()
 

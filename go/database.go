@@ -200,8 +200,13 @@ func GetAllUsers(socketTCPPort string) ([]User, error) {
 		return nil, fmt.Errorf("backend error: %v", jsonResponse.Message)
 	}
 
+	jsonMessageStr, ok := jsonResponse.Message.(string)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert jsonResponse.Message to string")
+	}
+
 	var users []User
-	err = json.Unmarshal([]byte(jsonResponse.Message), &users)
+	err = json.Unmarshal([]byte(jsonMessageStr), &users)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse user list: %v", err)
 	}

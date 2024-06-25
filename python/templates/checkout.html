@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Checkout</h1>
+
+{% if purchases %}
+    <h2>Your Purchases</h2>
+    <ul>
+        {% for item in purchases %}
+            <li>
+                <strong>Purchase date:</strong> {{ item.purchase_date | dateformat }}<br>
+                <strong>Game:</strong> <a href="{{ url_for('game', gameTitle=item.game_title) }}">{{ item.game_title }}</a><br>
+                <strong>Quantity:</strong> {{ item.num_copies }}<br>
+                <strong>Price per copy:</strong> ${{ item.price }}<br>
+                <strong>Total:</strong> ${{ item.num_copies * item.price }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>You have not made any purchases yet.</p>
+{% endif %}
+
+{% endblock %}

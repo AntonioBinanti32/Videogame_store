@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Your Cart</h1>
+{% if cart_items %}
+    <ul>
+        {% set ns = namespace(total_price=0) %}
+        {% for item in cart_items %}
+            {% set item_price = item['price'] %}
+            {% if item_price %}
+                {% set item_total = item['num_copies'] * item_price %}
+                {% set ns.total_price = ns.total_price + item_total %}
+                <li>
+                    <strong>Game:</strong> <a href="{{ url_for('game', gameTitle=item['game_title']) }}">{{ item['game_title'] }}</a><br>
+                    <strong>Quantity:</strong> {{ item['num_copies'] }}<br>
+                    <strong>Price per copy:</strong> ${{ item_price }}<br>
+                    <strong>Total:</strong> ${{ item_total }}
+                    <form action="{{ url_for('remove_from_cart', reservation_id=item['_id']['$oid']) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger">Remove</button>
+                    </form>
+                </li>
+            {% else %}
+                <li>
+                    <strong>Game:</strong> {{ item['game_title'] }}<br>
+                    <strong>Quantity:</strong> {{ item['num_copies'] }}<br>
+                    <strong>Price per copy:</strong> Price not available<br>
+                    <strong>Total:</strong> Price not available
+                    <form action="{{ url_for('remove_from_cart', reservation_id=item['_id']['$oid']) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger">Remove</button>
+                    </form>
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    <p>Total Price: ${{ ns.total_price }}</p>
+    <form action="{{ url_for('checkout') }}" method="post">
+        <input type="hidden" name="cart_items" value='{{ cart_items | tojson }}'>
+        <button type="submit" class="btn btn-primary">Proceed to Checkout</button>
+    </form>
+{% else %}
+    <p>Your cart is empty.</p>
+{% endif %}
+{% endblock %}

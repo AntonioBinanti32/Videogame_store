@@ -1,8 +1,5 @@
 package main
 
-//TODO: Sistemare ricezione token dagli headers
-// TODO: Implementare endpoints per recommendations
-
 import (
 	"fmt"
 	"log"
@@ -11,6 +8,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 )
+
+var socketTCPPort string
 
 func main() {
 
@@ -26,9 +25,17 @@ func main() {
 	}
 
 	serverPort := viper.GetString("Server.Port")
-	socketTCPPort := viper.GetString("SocketTCP.Port")
+	socketTCPPort = viper.GetString("SocketTCP.Port")
+	webhookPort := viper.GetString("Webhook.Port")
 
 	fmt.Println("Porta del server:", serverPort, "\nPorta del socket:", socketTCPPort)
+
+	// Configurazione del database
+	db, err := setupDatabase()
+	if err != nil {
+		log.Fatal("Errore durante la configurazione del database:", err)
+	}
+	defer db.Close()
 
 	r := mux.NewRouter()
 
@@ -40,10 +47,16 @@ func main() {
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		LoginHandler(w, r, socketTCPPort)
 	}).Methods("POST")
-
-	//TODO: Verificare che funzionino
+	r.HandleFunc("/getUser/{username}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		username := params["username"]
+		GetUserHandler(w, r, socketTCPPort, username)
+	}).Methods("GET")
+	r.HandleFunc("/getAllUsers", func(w http.ResponseWriter, r *http.Request) {
+		GetAllUsersHandler(w, r, socketTCPPort)
+	}).Methods("GET")
 	r.HandleFunc("/addGame", func(w http.ResponseWriter, r *http.Request) {
-		AddGameHandler(w, r, socketTCPPort)
+		AddGameHandler(w, r, socketTCPPort, webhookPort, db)
 	}).Methods("POST")
 	r.HandleFunc("/getGames", func(w http.ResponseWriter, r *http.Request) {
 		GetGamesHandler(w, r, socketTCPPort)
@@ -52,6 +65,14 @@ func main() {
 		params := mux.Vars(r)
 		gameTitle := params["gameTitle"]
 		GetGameByTitleHandler(w, r, socketTCPPort, gameTitle)
+	}).Methods("GET")
+	r.HandleFunc("/getGameByGenre/{genre}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		genre := params["genre"]
+		GetGameByGenreHandler(w, r, socketTCPPort, genre)
+	}).Methods("GET")
+	r.HandleFunc("/getUserPreferredGames", func(w http.ResponseWriter, r *http.Request) {
+		GetUserPreferredGamesHandler(w, r, socketTCPPort)
 	}).Methods("GET")
 	r.HandleFunc("/getReview/{reviewID}", func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
@@ -69,18 +90,21 @@ func main() {
 		GetReviewByGameHandler(w, r, socketTCPPort, gameTitle)
 	}).Methods("GET")
 	r.HandleFunc("/addReview", func(w http.ResponseWriter, r *http.Request) {
-		AddReviewHandler(w, r, socketTCPPort)
+		AddReviewHandler(w, r, socketTCPPort, db)
 	}).Methods("POST")
 	r.HandleFunc("/addReservation", func(w http.ResponseWriter, r *http.Request) {
 		AddReservationHandler(w, r, socketTCPPort)
 	}).Methods("POST")
 	r.HandleFunc("/addPurchase", func(w http.ResponseWriter, r *http.Request) {
-		AddPurchaseHandler(w, r, socketTCPPort)
+		AddPurchaseHandler(w, r, socketTCPPort, db)
 	}).Methods("POST")
 	r.HandleFunc("/getReservations/{username}", func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		username := params["username"]
 		GetReservationsHandler(w, r, socketTCPPort, username)
+	}).Methods("GET")
+	r.HandleFunc("/getAllPurchases", func(w http.ResponseWriter, r *http.Request) {
+		GetAllPurchasesHandler(w, r, socketTCPPort)
 	}).Methods("GET")
 	r.HandleFunc("/getPurchases/{username}", func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
@@ -91,7 +115,7 @@ func main() {
 		UpdateUserHandler(w, r, socketTCPPort)
 	}).Methods("PUT")
 	r.HandleFunc("/updateGame", func(w http.ResponseWriter, r *http.Request) {
-		UpdateGameHandler(w, r, socketTCPPort)
+		UpdateGameHandler(w, r, socketTCPPort, db)
 	}).Methods("PUT")
 	r.HandleFunc("/updateReview", func(w http.ResponseWriter, r *http.Request) {
 		UpdateReviewHandler(w, r, socketTCPPort)
@@ -125,25 +149,21 @@ func main() {
 	r.HandleFunc("/deleteReview", func(w http.ResponseWriter, r *http.Request) {
 		DeleteReviewHandler(w, r, socketTCPPort)
 	}).Methods("DELETE")
-	//TODO Implementare altri endpoint
+	r.HandleFunc("/getAllNotifications/{username}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		username := params["username"]
+		getAllNotificationsHandler(w, r, db, username)
+	}).Methods("GET")
+	r.HandleFunc("/getUnreadNotifications/{username}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		username := params["username"]
+		getUnreadNotificationsHandler(w, r, db, username)
+	}).Methods("GET")
+	r.HandleFunc("/markNotificationAsRead", func(w http.ResponseWriter, r *http.Request) {
+		markNotificationAsReadHandler(w, r, db)
+	}).Methods("POST")
 
 	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":"+serverPort, nil))
-
-	/* ESEMPI
-	r.HandleFunc("/", HomeHandler)
-	r.HandleFunc("/signup", SignupHandler).Methods("POST")
-	// Route per l'aggiornamento di un elemento esistente
-	r.HandleFunc("/item/{id}", UpdateItemHandler).Methods("PUT")
-
-	// Route per l'eliminazione di un elemento esistente
-	r.HandleFunc("/item/{id}", DeleteItemHandler).Methods("DELETE")
-
-	// Route per ottenere tutti gli elementi
-	r.HandleFunc("/items", GetItemsHandler).Methods("GET")
-	http.Handle("/", r)
-
-	log.Fatal(http.ListenAndServe(":8080", r))
-	*/
 }

@@ -1,7 +1,6 @@
 #include "Handler.h"
 #include <iostream>
 #include <sstream>
-#include <boost/url.hpp>
 
 namespace handler {
 
@@ -1371,14 +1370,6 @@ namespace handler {
         catch (const jwt::TokenExpiredError& e) {
             throw;
         }
-    }
-
-    std::string urlDecode(const std::string& SRC) {
-        boost::core::string_view s = SRC;
-        boost::system::result<boost::urls::url_view> r = boost::urls::parse_uri(s);
-        boost::urls::url_view u = r.value();
-        std::string urlString(u.data(), u.size());
-        return urlString;
     }
 
     void handleClient(SocketTcp& serverSocket, SOCKET clientSocket) {

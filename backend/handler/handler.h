@@ -46,7 +46,6 @@ namespace handler {
     std::string generateJwtToken(const std::string& username);
     std::string generateJson(const std::string& token, const std::string& message, bool isError = false, const std::string& user = "");
     bool verifyToken(const std::string& token, const std::string& username);
-    string urlDecode(const string& SRC);
 };
 
 #endif // VIDEOGAME_STORE_HANDLER_H

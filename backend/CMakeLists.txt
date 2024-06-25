@@ -18,12 +18,6 @@ target_link_libraries(Videogame_store PRIVATE $<IF:$<TARGET_EXISTS:mongo::bsoncx
 
 find_package(mongocxx CONFIG REQUIRED)
 target_link_libraries(Videogame_store PRIVATE $<IF:$<TARGET_EXISTS:mongo::mongocxx_static>,mongo::mongocxx_static,mongo::mongocxx_shared>)
-#find_package(mongocxx CONFIG REQUIRED)
-#se esiste una versione statica della libreria mongocxx (mongo::mongocxx_static) la collega. Altrimenti, collega la versione condivisa (mongo::mongocxx_shared).
-#target_link_libraries(Videogame_store PRIVATE $<IF:$<TARGET_EXISTS:mongo::mongocxx_static>,mongo::mongocxx_static,mongo::mongocxx_shared>) 
-
-#find_package(bsoncxx CONFIG REQUIRED)
-#target_link_libraries(Videogame_store PRIVATE $<IF:$<TARGET_EXISTS:mongo::bsoncxx_static>,mongo::bsoncxx_static,mongo::bsoncxx_shared>)
 
 find_package(unofficial-restbed CONFIG REQUIRED)
 target_link_libraries(Videogame_store PRIVATE unofficial::restbed::restbed)
@@ -36,9 +30,6 @@ target_link_libraries(Videogame_store PRIVATE nlohmann_json::nlohmann_json)
 
 find_package(cpp-jwt CONFIG REQUIRED) #Documentation: https://github.com/arun11299/cpp-jwt
 target_link_libraries(Videogame_store PRIVATE cpp-jwt::cpp-jwt)
-
-find_package(boost_url REQUIRED CONFIG) #Documentation: https://github.com/boostorg/url?tab=readme-ov-file
-target_link_libraries(Videogame_store PRIVATE Boost::url)
 
 if(WIN32)
   target_link_libraries(Videogame_store PRIVATE wsock32 ws2_32)

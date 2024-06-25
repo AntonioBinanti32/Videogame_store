@@ -71,6 +71,9 @@ func main() {
 		genre := params["genre"]
 		GetGameByGenreHandler(w, r, socketTCPPort, genre)
 	}).Methods("GET")
+	r.HandleFunc("/getUserPreferredGames", func(w http.ResponseWriter, r *http.Request) {
+		GetUserPreferredGamesHandler(w, r, socketTCPPort)
+	}).Methods("GET")
 	r.HandleFunc("/getReview/{reviewID}", func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		reviewID := params["reviewID"]
@@ -159,7 +162,6 @@ func main() {
 	r.HandleFunc("/markNotificationAsRead", func(w http.ResponseWriter, r *http.Request) {
 		markNotificationAsReadHandler(w, r, db)
 	}).Methods("POST")
-	//TODO Implementare altri endpoint
 
 	http.Handle("/", r)
 

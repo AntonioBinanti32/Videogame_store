@@ -29,25 +29,22 @@ namespace handler {
     void handleGetReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetAllPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleGetPurchases(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
-    //TODO: void handleGetRecommendations(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleUpdateUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleUpdateGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleUpdateReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleUpdatePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleUpdateReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
-    //TODO: void handleUpdateRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleDeleteUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleDeleteGame(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleDeleteReservation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleDeletePurchase(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     void handleDeleteReview(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
-    //TODO: void handleDeleteRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket)
     void handleGetNumCopiesByGameTitle(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
+    void handleGetUserPreferredGames(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket);
     bool isGameAvailableForPurchase(const std::string& game_title, int num_copies_to_purchase);
     bool removeReservationsForGame(const std::string& username, const std::string& game_title, int num_copies);
     std::string generateJwtToken(const std::string& username);
     std::string generateJson(const std::string& token, const std::string& message, bool isError = false, const std::string& user = "");
-    //std::string generateJson(const std::string& token, const std::string& message, bool isError = false);
     bool verifyToken(const std::string& token, const std::string& username);
     string urlDecode(const string& SRC);
 };

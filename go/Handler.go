@@ -1,7 +1,5 @@
 package main
 
-// TODO: Implementare handler per recommendations
-
 import (
 	"bufio"
 	"database/sql"
@@ -307,6 +305,38 @@ func GetGameByGenreHandler(w http.ResponseWriter, r *http.Request, socketTCPPort
 	token := r.Header.Get("Token")
 
 	message := "getGameByGenre*" + genre + "*" + actualUser + "*" + token + "*"
+
+	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
+	if err != nil {
+		errorMessage := fmt.Sprintf("Failed to communicate with backend: %v", err)
+		jsonResponse := Response{
+			Message: errorMessage,
+			Error:   true,
+		}
+		respondWithError(w, jsonResponse, http.StatusInternalServerError)
+		return
+	}
+	if jsonResponse.Error {
+		errorMessage := fmt.Sprintf("Failed to communicate with backend: %v", jsonResponse.Message)
+		jsonResponse := Response{
+			Message: errorMessage,
+			Error:   true,
+		}
+		respondWithError(w, jsonResponse, http.StatusInternalServerError)
+		return
+	}
+
+	jsonMessage := getJsonList(jsonResponse.Message)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jsonMessage)
+}
+
+func GetUserPreferredGamesHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string) {
+
+	actualUser := r.Header.Get("ActualUser")
+	token := r.Header.Get("Token")
+
+	message := "getUserPreferredGames*" + actualUser + "*" + token + "*"
 
 	jsonResponse, err := communicateWithBackend(message, socketTCPPort)
 	if err != nil {
@@ -1084,8 +1114,6 @@ func DeleteReviewHandler(w http.ResponseWriter, r *http.Request, socketTCPPort s
 	json.NewEncoder(w).Encode(jsonResponse)
 }
 
-//TODO: Implementare altri handler
-
 func communicateWithBackendToken(message string, socketTCPPort string) (ResponseToken, error) {
 	// Connessione al backend tramite socket TCP
 	conn, err := net.Dial("tcp", "localhost:"+socketTCPPort) //("tcp", "localhost:1984")
@@ -1108,7 +1136,6 @@ func communicateWithBackendToken(message string, socketTCPPort string) (Response
 	response = strings.TrimSuffix(response, "|")
 
 	var jsonResponse ResponseToken
-	//var jsonResponse interface{} TODO: Provare interface
 	err = json.Unmarshal([]byte(response), &jsonResponse)
 	if err != nil {
 		return ResponseToken{}, fmt.Errorf("failed to parse JSON response from backend: %v", err)

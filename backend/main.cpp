@@ -73,16 +73,5 @@ int main() {
         cout << e.what() << endl;
     }
 
-    /*try {
-        SocketTCPServer server(8080);
-        struct sockaddr_in client_address;
-        int client_sock = server.acceptConnection(client_address);
-        // Gestisci la connessione del client
-        closesocket(client_sock);
-    } catch (const SocketException& e) {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }*/
-
     return EXIT_SUCCESS;
 }

@@ -3,10 +3,6 @@
 #include <sstream>
 #include <boost/url.hpp>
 
-// TODO: Implementare Boost-url
-// TODO: Implemendare sistema di raccomandazioni
-// TODO: Inserire admin nella verifica token delle funzioni di gestione importanti
-
 namespace handler {
 
     void handleLogin(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
@@ -785,31 +781,6 @@ namespace handler {
             return;
         }
     }
-    
-
-    //TODO: Implementare handleGetRecommendations
-    /*
-    void handleGetRecommendations(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
-        std::istringstream iss(message);
-        std::string username;
-        if (std::getline(iss, username, '*')) {
-            try {
-                //std::vector<bsoncxx::document::value> recommendations = getRecommendations(username);
-                std::string response = "Recommendations:";  // Convert recommendations to string
-                serverSocket.sendMessage(response.c_str(), clientSocket);
-            }
-            catch (const std::exception& e) {
-                std::string error = "Get recommendations failed: " + std::string(e.what(), true);
-                serverSocket.sendMessage(error.c_str(), clientSocket);
-                return;
-            }
-        }
-        else {
-            const char* response = "Invalid get recommendations format";
-            serverSocket.sendMessage(response, clientSocket);
-            return;
-        }
-    }*/
 
     void handleUpdateUser(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
@@ -1286,47 +1257,46 @@ namespace handler {
         }
     }
 
-    //TODO: Da implementare handleDeleteRecommendation
-    /*
-    void handleDeleteRecommendation(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
+    void handleGetUserPreferredGames(const std::string& message, SocketTcp& serverSocket, SOCKET clientSocket) {
         std::istringstream iss(message);
-        std::string username, game_title;
-        if (std::getline(iss, username, '*') && std::getline(iss, game_title, '*')) {
+        std::string actualUser, token;
+        if (std::getline(iss, actualUser, '*') && std::getline(iss, token, '*')) {
             try {
-                MongoDB* mongoDb = MongoDB::getInstance();
-                mongoDb->deleteReview(username, game_title);
-                const char* response = "review deleted successfully";
-                serverSocket.sendMessage(response, clientSocket);
+                if (verifyToken(token, actualUser)) {
+                    MongoDB* mongoDb = MongoDB::getInstance();
+                    nlohmann::json games = mongoDb->getUserPreferredGames(actualUser);
+                    std::string response = generateJson("", games.dump(4)); // Converte il JSON in una stringa formattata con indentazione
+                    serverSocket.sendMessage(response.c_str(), clientSocket);
+                }
+                else {
+                    std::string error = generateJson("", "Errore verifica del token", true);
+                    serverSocket.sendMessage(error.c_str(), clientSocket);
+                    return;
+                }
             }
-            catch (UserNotFoundException& e) {
-                std::string error = "Delete reservation failed: " + std::string(e.what());
+            catch (const GetGameException& e) {
+                std::string error = generateJson("", "Get user preferred games failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
-            catch (GetGameException& e) {
-                std::string error = "Delete reservation failed: " + std::string(e.what());
-                serverSocket.sendMessage(error.c_str(), clientSocket);
-                return;
-            }
-            catch (ReviewException& e) {
-                std::string error = "Delete reservation failed: " + std::string(e.what());
+            catch (const jwt::TokenExpiredError& e) {
+                std::string error = generateJson("", "Get user preferred games failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
             catch (const std::exception& e) {
-                std::string error = "Delete review failed: " + std::string(e.what());
+                std::string error = generateJson("", "Get user preferred games failed: " + std::string(e.what()), true);
                 serverSocket.sendMessage(error.c_str(), clientSocket);
                 return;
             }
         }
         else {
-            const char* response = "Invalid delete review format";
-            serverSocket.sendMessage(response, clientSocket);
+            std::string response = generateJson("", "Invalid get user preferred games format", true);
+            serverSocket.sendMessage(response.c_str(), clientSocket);
             return;
         }
-    }*/
+    }
 
-    //TODO
     bool isGameAvailableForPurchase(const std::string& game_title, int num_copies_to_purchase) {
         MongoDB* mongoDb = MongoDB::getInstance();
         // Recupera il numero di copie disponibili per il gioco specificato
@@ -1386,11 +1356,6 @@ namespace handler {
         
         return response.dump();
     }
-
-    // Sovraccarico della funzione per accettare solo il token, il messaggio e isError
-    /*std::string generateJson(const std::string& token, const std::string& message, bool isError) {
-        return generateJson(token, message, "", isError);
-    }*/
 
     bool verifyToken(const std::string& token, const std::string& username) {
         try {
@@ -1462,6 +1427,9 @@ namespace handler {
                     else if (message.rfind("getGameByGenre*", 0) == 0) {
                         handleGetGameByGenre(message.substr(15), serverSocket, clientSocket);
                     }
+                    else if (message.rfind("getUserPreferredGames*", 0) == 0) {
+                        handleGetUserPreferredGames(message.substr(22), serverSocket, clientSocket);
+                    }
                     else if (message.rfind("getReview*", 0) == 0) {
                         handleGetReview(message.substr(10), serverSocket, clientSocket);
                     }
@@ -1489,10 +1457,6 @@ namespace handler {
                     else if (message.rfind("getPurchases*", 0) == 0) {
                         handleGetPurchases(message.substr(13), serverSocket, clientSocket);
                     }
-                    /*
-                    else if (message.rfind("getRecommendations*", 0) == 0) {
-                        handleGetRecommendations(message.substr(19), serverSocket, clientSocket);
-                    }*/
                     else if (message.rfind("updateUser*", 0) == 0) {
                         handleUpdateUser(message.substr(11), serverSocket, clientSocket);
                     }
@@ -1507,10 +1471,7 @@ namespace handler {
                     }
                     else if (message.rfind("updateReview*", 0) == 0) {
                         handleUpdateReview(message.substr(13), serverSocket, clientSocket);
-                    }/*
-                    else if (message.rfind("updateRecommendation*", 0) == 0) {
-                        handleUpdateRecommendation(message.substr(20), serverSocket, clientSocket);
-                    }*/
+                    }
                     else if (message.rfind("deleteUser*", 0) == 0) {
                         handleDeleteUser(message.substr(11), serverSocket, clientSocket);
                     }
@@ -1525,10 +1486,7 @@ namespace handler {
                     }
                     else if (message.rfind("deleteReview*", 0) == 0) {
                         handleDeleteReview(message.substr(13), serverSocket, clientSocket);
-                    }/*
-                    else if (message.rfind("deleteRecommendation*", 0) == 0) {
-                        handleDeleteRecommendation(message.substr(20), serverSocket, clientSocket);
-                    }*/
+                    }
                     else if (message.rfind("getNumCopiesByGameTitle*", 0) == 0) {
                         handleGetNumCopiesByGameTitle(message.substr(24), serverSocket, clientSocket);
                     }

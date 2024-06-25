@@ -4,8 +4,6 @@ import configparser
 from datetime import datetime
 import json
 
-#from database.database import db, Notification, User
-
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
@@ -13,12 +11,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 backend_url = config.get('backend', 'backend_url')
-#sqlalchemy_database_uri = config.get('datavbase', 'sqlalchemy_database_uri')
 
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///notifications.db'
-#db.init_app(app)
-
-#TODO: implementare giochi suggeriti
 #TODO: Completare styles.css
 #TODO: Fare checkup generale per vedere se funziona tutto
 #TODO: Implementare users.html
@@ -93,6 +86,7 @@ def dateformat_input(value):
         print(f"Errore nella formattazione del timestamp per input: {e}")
         return ""
 
+
 @app.route('/')
 def home():
     try:
@@ -101,10 +95,11 @@ def home():
 
         actualUser = getUserInformation()
 
-        response_games = requests.get(f'{backend_url}/getGames', headers=getHeaders())
+        response_games = requests.get(f'{backend_url}/getUserPreferredGames', headers=getHeaders())
         if response_games.json()['error']:
             flash(response_games.json()['message'])
-            return render_template('home.html', games=[], genres=[], actualUser=[], admin=False, unread_notifications=[])
+            return render_template('home.html', games=[], genres=[], actualUser=[], admin=False,
+                                   unread_notifications=[])
         games = convertToJson(response_games.json()['message'])
 
         # Recupera i parametri di ricerca e filtro dalla richiesta
@@ -112,6 +107,7 @@ def home():
         selected_genre = request.args.get('genre', '')
         min_price = request.args.get('min_price', '')
         max_price = request.args.get('max_price', '')
+        sort_order = request.args.get('sort_order', '')
 
         # Filtra i giochi in base alla ricerca
         if search_query:
@@ -127,19 +123,30 @@ def home():
         if max_price:
             games = [game for game in games if game['price'] <= float(max_price)]
 
+        # Ordinamento dei giochi
+        if sort_order == 'title':
+            games = sorted(games, key=lambda x: x['title'])
+        elif sort_order == 'genre':
+            games = sorted(games, key=lambda x: x['genre'])
+        elif sort_order == 'developer':
+            games = sorted(games, key=lambda x: x['developer'])
+        elif sort_order == 'preferred':
+            response_preferred_games = requests.get(f'{backend_url}/getUserPreferredGames', headers=getHeaders())
+            preferred_games = convertToJson(response_preferred_games.json()['message'])
+            games = preferred_games
+
         # Recupera i generi dei giochi
         genres = list(set(game['genre'] for game in games))
 
         username = session.get('user')
-        response_notifications = requests.get(f'{backend_url}/getUnreadNotifications/{username}', )
+        response_notifications = requests.get(f'{backend_url}/getUnreadNotifications/{username}')
         unread_notifications = response_notifications.json()
         if unread_notifications is None:
-            return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin(), unread_notifications=[])
-        #if unread_notifications['error']:
-        #    flash(response_notifications.json()['message'])
-        #    return render_template('home.html')
+            return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin(),
+                                   unread_notifications=[])
 
-        return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin(), unread_notifications=unread_notifications)
+        return render_template('home.html', games=games, genres=genres, actualUser=actualUser, admin=is_admin(),
+                               unread_notifications=unread_notifications)
     except requests.exceptions.HTTPError as http_err:
         flash('Login failed: invalid credentials')
     except requests.exceptions.ConnectionError as conn_err:
@@ -486,7 +493,7 @@ def purchases():
             flash(response.json()['message'])
             return redirect(url_for('home'))
         response.raise_for_status()
-        purchases = response.json()
+        purchases = convertToJson(response.json()['message'])
 
         total_revenue = sum(item['num_copies'] * item['price'] for item in purchases)
 

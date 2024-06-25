@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(Videogame_store "main.cpp" 
 "database/MongoDB.h" "database/MongoDB.cpp"
 "handler/Handler.h" "handler/Handler.cpp" 
-"exceptions/SignupException.h" "exceptions/LoginException.h" "exceptions/CreateGameException.h" "exceptions/GetGameException.h" "exceptions/UserNotFoundException.h" "exceptions/CreateReservationException.h" "exceptions/GetRecommendationsException.h" "exceptions/SocketException.h" "exceptions/ReviewException.h" "exceptions/ReservationException.h"
+"exceptions/SignupException.h" "exceptions/LoginException.h" "exceptions/CreateGameException.h" "exceptions/GetGameException.h" "exceptions/UserNotFoundException.h" "exceptions/CreateReservationException.h"  "exceptions/SocketException.h" "exceptions/ReviewException.h" "exceptions/ReservationException.h"
 "socketTcp/SocketTcp.h" "socketTcp/SocketTcp.cpp" "exceptions/ReviewException.h" "exceptions/ReservationException.h" "exceptions/PurchaseException.h" "exceptions/TokenException.h")
 
 find_package(bsoncxx CONFIG REQUIRED)

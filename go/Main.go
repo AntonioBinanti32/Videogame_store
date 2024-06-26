@@ -26,7 +26,6 @@ func main() {
 
 	serverPort := viper.GetString("Server.Port")
 	socketTCPPort = viper.GetString("SocketTCP.Port")
-	webhookPort := viper.GetString("Webhook.Port")
 
 	fmt.Println("Porta del server:", serverPort, "\nPorta del socket:", socketTCPPort)
 
@@ -56,7 +55,7 @@ func main() {
 		GetAllUsersHandler(w, r, socketTCPPort)
 	}).Methods("GET")
 	r.HandleFunc("/addGame", func(w http.ResponseWriter, r *http.Request) {
-		AddGameHandler(w, r, socketTCPPort, webhookPort, db)
+		AddGameHandler(w, r, socketTCPPort, db)
 	}).Methods("POST")
 	r.HandleFunc("/getGames", func(w http.ResponseWriter, r *http.Request) {
 		GetGamesHandler(w, r, socketTCPPort)

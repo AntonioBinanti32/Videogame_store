@@ -189,7 +189,7 @@ func GetAllUsersHandler(w http.ResponseWriter, r *http.Request, socketTCPPort st
 	json.NewEncoder(w).Encode(jsonMessage)
 }
 
-func AddGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, webhookPort string, db *sql.DB) {
+func AddGameHandler(w http.ResponseWriter, r *http.Request, socketTCPPort string, db *sql.DB) {
 	var req AddGameRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {

@@ -53,10 +53,15 @@ Per compilare il modulo Go andare nella directory `/go` e da prompt eseguire il 
 Avviare quindi l'eseguibile `videogame_store.exe` nella directory `/go/`.
 
 #### Python
+Per avviare il modulo Python andare nella directory `/python` e da prompt eseguire il comando: `python app.py`
+
+#### MongoDB
+Per avere una visione completa dell'applicativo importare nel database MongoDB i json situatu nella cartella `/collections`
 
 ### Accesso e Funzionalità
 
 Una volta in esecuzione i tre moduli sarà possibile effettuare il login o la signup al seguente URL: [http://127.0.0.1:5000](http://127.0.0.1:5000).
+(Per entrare in modalità amministratore inserire username: `admin`, password: `0000`)
 
 Una volta effettuata una di queste operazioni con successo sarà possibile accedere alla home dello store. Da qui l'utente avrà la possibilità di:
 - Visualizzare tutti i videogiochi ordinati in base agli acquisti e recensioni passate

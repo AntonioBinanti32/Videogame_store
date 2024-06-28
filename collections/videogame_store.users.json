@@ -1,0 +1,132 @@
+[{
+  "_id": {
+    "$oid": "66754a29b8a16f480d028871"
+  },
+  "username": "admin",
+  "password": "0000",
+  "image_url": "https://static.vecteezy.com/system/resources/thumbnails/009/636/683/small_2x/admin-3d-illustration-icon-png.png",
+  "created_at": {
+    "$date": "2024-06-21T09:38:49.694Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f0"
+  },
+  "username": "alice",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/women/1.jpg",
+  "created_at": {
+    "$date": "2024-06-21T09:38:49.694Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f1"
+  },
+  "username": "bob",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/men/2.jpg",
+  "created_at": {
+    "$date": "2024-06-22T11:20:00.000Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f2"
+  },
+  "username": "claire",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/women/3.jpg",
+  "created_at": {
+    "$date": "2024-06-23T13:45:00.000Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f3"
+  },
+  "username": "david",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/men/4.jpg",
+  "created_at": {
+    "$date": "2024-06-24T08:10:00.000Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f4"
+  },
+  "username": "emma",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/women/5.jpg",
+  "created_at": {
+    "$date": "2024-06-25T15:30:00.000Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f5"
+  },
+  "username": "frank",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/men/6.jpg",
+  "created_at": {
+    "$date": "2024-06-26T10:05:00.000Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f6"
+  },
+  "username": "grace",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/women/7.jpg",
+  "created_at": {
+    "$date": "2024-06-27T12:20:00.000Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f7"
+  },
+  "username": "henry",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/men/8.jpg",
+  "created_at": {
+    "$date": "2024-06-28T14:15:00.000Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f8"
+  },
+  "username": "isabel",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/women/9.jpg",
+  "created_at": {
+    "$date": "2024-06-29T16:45:00.000Z"
+  },
+  "reservations": []
+},
+{
+  "_id": {
+    "$oid": "667ebb83c0c0a40f5325d2f9"
+  },
+  "username": "jack",
+  "password": "0000",
+  "image_url": "https://randomuser.me/api/portraits/men/10.jpg",
+  "created_at": {
+    "$date": "2024-06-30T18:00:00.000Z"
+  },
+  "reservations": []
+}]

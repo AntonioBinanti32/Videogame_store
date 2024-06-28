@@ -5,35 +5,38 @@
     <h1>{{ game.title }}</h1>
     <div class="game-informations">
         <div class="game-text">
-            <p>Genre: {{ game.genre }}</p>
-            <p>Release Date: {{ game.release_date | dateformat }}</p>
-            <p>Developer: {{ game.developer }}</p>
-            <p>Description:</p>
+            <p><strong>Genre:</strong> {{ game.genre }}</p>
+            <p><strong>Release Date:</strong> {{ game.release_date | dateformat }}</p>
+            <p><strong>Developer:</strong> {{ game.developer }}</p>
+            <p><strong>Description:</strong></p>
             <div class="game-description">
                 <p>{{ game.description }}</p>
             </div>
             {% if admin %}
-                <p>Stock: {{ game.stock }}</p>
+                <p><strong>Stock:</strong> {{ game.stock }}</p>
             {% endif %}
-            <p>Price: {{ game.price }}</p>
+            <p class="price"><strong>Price:</strong> {{ game.price }}€</p>
         </div>
         <img src="{{ game.image_url }}" alt="{{ game.name }}" class="game-image">
     </div>
-
-    <!-- Form per aggiungere al carrello con quantità -->
-    <form action="{{ url_for('add_to_cart', gameTitle=game.title) }}" method="post">
-        <label for="quantity">Quantity:</label>
-        <input type="number" id="quantity" name="quantity" value="1" min="1" required>
-        <button type="submit">Add to Cart</button>
-    </form>
-
-    <!-- Bottoni di aggiornamento ed eliminazione del gioco per gli admin -->
-    {% if admin %}
-        <a href="{{ url_for('update_game_form', gameTitle=game.title) }}" class="btn btn-primary">Update Game</a>
-        <form action="{{ url_for('delete_game', gameTitle=game.title) }}" method="post">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this game?')">Delete Game</button>
+    <div class="game-actions">
+        <!-- Form per aggiungere al carrello con quantità -->
+        <form action="{{ url_for('add_to_cart', gameTitle=game.title) }}" method="post">
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+            <button type="submit">Add to Cart</button>
         </form>
-    {% endif %}
+
+        <!-- Bottoni di aggiornamento ed eliminazione del gioco per gli admin -->
+        {% if admin %}
+            <div class="admin-actions">
+                <a href="{{ url_for('update_game_form', gameTitle=game.title) }}" class="btn btn-primary">Update Game</a>
+                <form action="{{ url_for('delete_game', gameTitle=game.title) }}" method="post">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this game?')"">Delete Game</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
 
     <!-- Form per aggiungere una recensione -->
     <form action="{{ url_for('reviews', gameTitle=game.title) }}" method="post">
@@ -59,7 +62,7 @@
                         ({{ review.created_at | dateformat }})
                     {% endif %}
                     </p>
-                    <p>Rating: {{ review.rating }}</p>
+                    <p><strong>Rating:</strong> <span class="stars">{% for i in range(review.rating) %}&#9733;{% endfor %}</span></p>
                     <p>{{ review.review_text }}</p>
                 </div>
             {% endfor %}

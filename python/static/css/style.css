@@ -1,11 +1,6 @@
 /*
-#TODO: fare css barra di ricerca
-#TODO: Fare css di add to cart, descriptions e reviews in game.html
-#TODO: Fare css di cart in cart.html
-#TODO: Fare css di cart in purchases.html
 #TODO: Fare css di update_game.html
 #TODO: Fare css di create_game.html
-#TODO: Fare css di purchases.html
 #TODO: Fare css di notifications.html
 #TODO: implementare check out e i miei acquisti
 #TODO: Fare casi crud di game per amministratore
@@ -453,7 +448,11 @@ h1 {
     flex-direction: column;
     justify-content: space-between;
     margin: 30px 100px;
+    text-align: left;
 }
+
+.game-text p strong {
+    color: #ffc000;
 }
 
 /* Stili per il titolo del gioco */
@@ -483,35 +482,48 @@ h1 {
     font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 15px;
+    color: red;
 }
 
 /* Stili per i link di azione */
 .game-stats a {
+    height: 43px;
     display: inline-block;
-    background-color: #00FF00;
+    background-color: #ffc000;
     color: #000000;
     text-decoration: none;
     padding: 10px 20px;
     border-radius: 5px;
-    margin-right: 10px;
+    margin-top: 20px;
+    margin-right: 50px;
     transition: background-color 0.3s ease;
 }
 
 .game-stats a:hover {
-    background-color: #45a049;
+    background-color: #a24d00;
+}
+
+.btn.btn-danger {
+    background-color: red;
+}
+
+.btn.btn-danger:hover {
+    background-color: #920000;
 }
 
 /* Stili per il form delle recensioni */
 .game-stats form {
     margin-top: 20px;
     text-align: center;
+    display: flex;
 }
 
 .game-stats form textarea {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #ccc;.
+    border-radius: 10px;
     border-radius: 5px;
     font-size: 16px;
     resize: vertical;
@@ -533,6 +545,31 @@ h1 {
 
 .game-stats form button:hover {
     background-color: #45a049;
+}
+
+
+.game-actions {
+    display: flex;
+    justify-content: space-around;
+    padding: 40px 0px;
+}
+
+.game-actions label{
+    padding: 10px;
+    font-size: 1.2em;
+    color: #ffc000;
+}
+
+.game-actions input {
+    border-radius: 10px;
+    width: 60px;
+    text-align: center;
+    font-size: 1.2em;
+    margin: 5px;
+}
+
+.admin-actions {
+    display: flex;
 }
 
 .rating {
@@ -561,6 +598,31 @@ h1 {
     color: #ffcc00; /* Color all stars up to the hovered one */
 }
 
+.reviews {
+    margin-top: 30px;
+    text-align: left;
+}
+
+.reviews h2 {
+    margin-bottom: 20px;
+}
+
+.review {
+    background-color: #222;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0px 0px 10px #00FF00;
+}
+
+.review p {
+    margin: 0 0 10px;
+}
+
+.review p strong {
+    color: #00FF00;
+}
+
 .unread {
     font-weight: bold;
     color: red;
@@ -576,6 +638,464 @@ h1 {
     top: 0;
     right: 0;
 }
+
+/* Stile generale del form */
+.search-filter-form {
+    background-color: #000; /* Sfondo nero */
+    color: #00FF00; /* Testo verde */
+    padding: 20px;
+    border-radius: 10px;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px; /* Spaziatura tra gli elementi */
+}
+
+/* Stile per gli input di testo e numero */
+.search-filter-form input[type="text"],
+.search-filter-form input[type="number"],
+.search-filter-form select {
+    background-color: #333; /* Sfondo grigio scuro */
+    color: #00FF00; /* Testo verde */
+    border: 1px solid #00FF00; /* Bordo verde */
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    flex: 1;
+    min-width: 200px; /* Larghezza minima */
+}
+
+/* Stile per il pulsante di invio e di reset */
+.search-filter-form button,
+.search-filter-form .reset-button {
+    background-color: #00FF00; /* Sfondo verde */
+    color: #000; /* Testo nero */
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+    min-width: 100px; /* Larghezza minima */
+}
+
+.search-filter-form .reset-button {
+    background-color: red;
+    border: 1px solid black;
+    color: black;
+    text-decoration: none;
+}
+
+/* Stile per i placeholder */
+.search-filter-form ::placeholder {
+    color: #00FF00; /* Placeholder verde */
+}
+
+/* Stile per i bordi al focus */
+.search-filter-form input[type="text"]:focus,
+.search-filter-form input[type="number"]:focus,
+.search-filter-form select:focus {
+    outline: none;
+    border-color: #00FF00; /* Bordo verde al focus */
+}
+
+/* Stili per la pagina del carrello */
+.cart-container {
+    padding: 20px;
+}
+
+.cart-container h1 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.cart-container ul {
+    list-style-type: none;
+    padding: 20px;
+    background-color: black;
+    border-radius:10px;
+    box-shadow: inset 0px 0px 10px #00FF00;
+}
+
+.cart-container li {
+    box-shadow: 0px 0px 10px #00FF00;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cart-container li strong {
+    font-weight: bold;
+    color: #ffc000;
+}
+
+.cart-container .cart-item-info {
+    width: 75%;
+    color: #00FF00;
+}
+
+.cart-container .cart-item-info a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.cart-container .cart-item-info a:hover {
+    text-decoration: underline;
+}
+
+.cart-container .cart-item-actions {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+
+.cart-container .cart-item-actions form {
+    display: inline;
+}
+
+.cart-container .cart-item-actions button {
+    background-color: red;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.cart-container .cart-item-actions button:hover {
+    background-color: #920000;
+}
+
+.cart-container .total-price {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: right;
+    margin-top: 20px;
+    color: red;
+}
+
+.cart-container .checkout-form {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.cart-container .checkout-form button {
+    background-color: #00FF00;
+    color: #000000;
+    border: none;
+    padding: 12px 20px;
+    font-size: 1.2em;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.cart-container .checkout-form button:hover {
+    background-color: #45a049;
+}
+
+/* Stili per quando il carrello è vuoto */
+.cart-container .empty-cart {
+    text-align: center;
+    font-size: 1.2em;
+    color: #666;
+    margin-top: 20px;
+}
+
+/* Stili per la pagina degli acquisti */
+.purchases-container {
+    padding: 20px;
+}
+
+.purchases-container h1 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.purchases-container ul {
+    list-style-type: none;
+    padding: 20px;
+    background-color: black;
+    border-radius:10px;
+    box-shadow: inset 0px 0px 10px #00FF00;
+}
+
+.purchases-container li {
+    box-shadow: 0px 0px 10px #00FF00;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.purchases-container li strong {
+    font-weight: bold;
+    color: #ffc000;
+}
+
+.purchases-container .purchase-item-info {
+    width: 100%;
+    color: #00FF00;
+}
+
+.purchases-container .purchase-item-info a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.purchases-container .purchase-item-info a:hover {
+    text-decoration: underline;
+}
+
+.purchases-container .total-revenue {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: right;
+    margin-top: 20px;
+    color: red;
+}
+
+/* Stili per quando non ci sono acquisti */
+.purchases-container .no-purchases {
+    text-align: center;
+    font-size: 1.2em;
+    color: #666;
+    margin-top: 20px;
+}
+
+/* Stili per la pagina di checkout */
+.checkout-form {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
+}
+
+.checkout-form h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #00FF00;  /* Verde fluo */
+}
+
+.checkout-form h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #00FF00;  /* Verde fluo */
+}
+
+.checkout-form ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.checkout-form li {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.checkout-form li strong {
+    color: #000;
+}
+
+.checkout-form .purchase-item-info {
+    color: #000;
+}
+
+.checkout-form .purchase-item-info a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.checkout-form .purchase-item-info a:hover {
+    text-decoration: underline;
+}
+
+/* Stili per quando non ci sono acquisti */
+.checkout-form .no-purchases {
+    text-align: center;
+    font-size: 1.2em;
+    color: #666;
+    margin-top: 20px;
+}
+
+/* Stili per la pagina di checkout */
+.checkout-container {
+    padding: 20px;
+}
+
+.checkout-container h1 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.checkout-container h2 {
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.checkout-container ul {
+    list-style-type: none;
+    padding: 20px;
+    background-color: black;
+    border-radius:10px;
+    box-shadow: inset 0px 0px 10px #00FF00;
+}
+
+.checkout-container li {
+    box-shadow: 0px 0px 10px #00FF00;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.checkout-container li strong {
+    font-weight: bold;
+    color: #ffc000;
+}
+
+.checkout-container .purchase-item-info {
+    width: 100%;
+    color: #00FF00;
+}
+
+.checkout-container .purchase-item-info a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.checkout-container .purchase-item-info a:hover {
+    text-decoration: underline;
+}
+
+/* Stili per quando non ci sono acquisti */
+.checkout-container .no-purchases {
+    text-align: center;
+    font-size: 1.2em;
+    color: #666;
+    margin-top: 20px;
+}
+
+/* Stili per il form di aggiornamento del gioco */
+.update-game-form {
+    max-width: 600px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.8);  /* Sfondo bianco con trasparenza */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
+}
+
+.update-game-form h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #00FF00;  /* Verde fluo */
+}
+
+.update-game-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;  /* Testo grigio scuro */
+}
+
+.update-game-form input[type="text"],
+.update-game-form input[type="date"],
+.update-game-form input[type="number"],
+.update-game-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.update-game-form button {
+    background-color: #00FF00;  /* Verde fluo */
+    color: #000000;  /* Testo nero */
+    border: none;
+    padding: 12px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.update-game-form button:hover {
+    background-color: #45a049;  /* Verde scuro al passaggio del mouse */
+}
+
+/* Stili per il form di creazione del nuovo gioco */
+.create-game-form {
+    max-width: 600px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.8);  /* Sfondo bianco con trasparenza */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
+}
+
+.create-game-form h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #00FF00;  /* Verde fluo */
+}
+
+.create-game-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;  /* Testo grigio scuro */
+}
+
+.create-game-form input[type="text"],
+.create-game-form input[type="date"],
+.create-game-form input[type="number"],
+.create-game-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.create-game-form button {
+    background-color: #00FF00;  /* Verde fluo */
+    color: #000000;  /* Testo nero */
+    border: none;
+    padding: 12px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.create-game-form button:hover {
+    background-color: #45a049;  /* Verde scuro al passaggio del mouse */
+}
+
+
+
 
 
 

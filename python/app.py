@@ -485,7 +485,7 @@ def checkout():
 def purchases():
     try:
         if not is_admin():
-            flash('Only admin users can update games.', 'danger')
+            flash('Only admin users can view all purchases.', 'danger')
             return redirect(url_for('home'))
 
         response = requests.get(f'{backend_url}/getAllPurchases', headers=getHeaders())

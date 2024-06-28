@@ -390,6 +390,7 @@ h1 {
     color: #00FF00;  /* Verde fluo */
     text-decoration: none;
     transition: background-color 0.3s ease;
+    position: relative;
 }
 
 .user-dropdown a:hover {
@@ -701,293 +702,223 @@ h1 {
 
 /* Stili per la pagina del carrello */
 .cart-container {
-    padding: 20px;
-}
-
-.cart-container h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.cart-container ul {
-    list-style-type: none;
-    padding: 20px;
-    background-color: black;
-    border-radius:10px;
-    box-shadow: inset 0px 0px 10px #00FF00;
-}
-
-.cart-container li {
-    box-shadow: 0px 0px 10px #00FF00;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.cart-container li strong {
-    font-weight: bold;
-    color: #ffc000;
-}
-
-.cart-container .cart-item-info {
-    width: 75%;
-    color: #00FF00;
-}
-
-.cart-container .cart-item-info a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-.cart-container .cart-item-info a:hover {
-    text-decoration: underline;
-}
-
-.cart-container .cart-item-actions {
-    display: flex;
-    align-items: center;
-    padding: 20px;
-}
-
-.cart-container .cart-item-actions form {
-    display: inline;
-}
-
-.cart-container .cart-item-actions button {
-    background-color: red;
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.cart-container .cart-item-actions button:hover {
-    background-color: #920000;
-}
-
-.cart-container .total-price {
-    font-size: 1.5em;
-    font-weight: bold;
-    text-align: right;
-    margin-top: 20px;
-    color: red;
-}
-
-.cart-container .checkout-form {
-    text-align: center;
-    margin-top: 30px;
-}
-
-.cart-container .checkout-form button {
-    background-color: #00FF00;
-    color: #000000;
-    border: none;
-    padding: 12px 20px;
-    font-size: 1.2em;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.cart-container .checkout-form button:hover {
-    background-color: #45a049;
-}
-
-/* Stili per quando il carrello è vuoto */
-.cart-container .empty-cart {
-    text-align: center;
-    font-size: 1.2em;
-    color: #666;
-    margin-top: 20px;
-}
-
-/* Stili per la pagina degli acquisti */
-.purchases-container {
-    padding: 20px;
-}
-
-.purchases-container h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.purchases-container ul {
-    list-style-type: none;
-    padding: 20px;
-    background-color: black;
-    border-radius:10px;
-    box-shadow: inset 0px 0px 10px #00FF00;
-}
-
-.purchases-container li {
-    box-shadow: 0px 0px 10px #00FF00;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.purchases-container li strong {
-    font-weight: bold;
-    color: #ffc000;
-}
-
-.purchases-container .purchase-item-info {
-    width: 100%;
-    color: #00FF00;
-}
-
-.purchases-container .purchase-item-info a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-.purchases-container .purchase-item-info a:hover {
-    text-decoration: underline;
-}
-
-.purchases-container .total-revenue {
-    font-size: 1.5em;
-    font-weight: bold;
-    text-align: right;
-    margin-top: 20px;
-    color: red;
-}
-
-/* Stili per quando non ci sono acquisti */
-.purchases-container .no-purchases {
-    text-align: center;
-    font-size: 1.2em;
-    color: #666;
-    margin-top: 20px;
-}
-
-/* Stili per la pagina di checkout */
-.checkout-form {
-    max-width: 600px;
+    max-width: 800px;
     margin: auto;
+    background-color: rgba(255, 255, 255, 0.8);  /* Sfondo bianco con trasparenza */
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
 }
 
-.checkout-form h1 {
+.cart-container ul {
+    background-color: transparent;
+}
+
+.cart-container h1 {
     text-align: center;
     margin-bottom: 20px;
     color: #00FF00;  /* Verde fluo */
 }
 
-.checkout-form h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #00FF00;  /* Verde fluo */
-}
-
-.checkout-form ul {
+.cart-items-list {
     list-style-type: none;
     padding: 0;
 }
 
-.checkout-form li {
-    padding: 10px;
+.cart-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f0f0f0;  /* Sfondo grigio chiaro */
+    border-radius: 5px;
+}
+
+.cart-item-info {
     margin-bottom: 10px;
-    border-bottom: 1px solid #ccc;
 }
 
-.checkout-form li strong {
-    color: #000;
+.cart-item-info strong {
+    color: #333;  /* Testo grigio scuro */
 }
 
-.checkout-form .purchase-item-info {
-    color: #000;
+.cart-item-actions {
+    text-align: right;
 }
 
-.checkout-form .purchase-item-info a {
-    color: #007bff;
-    text-decoration: none;
+.cart-container .checkout-form {
+    box-shadow: 0 0 0;
 }
 
-.checkout-form .purchase-item-info a:hover {
-    text-decoration: underline;
+.total-price {
+    color: red;
+    text-align: right;
+    margin-top: 20px;
+    font-size: 2em;
+    font-weight: bold;
 }
 
-/* Stili per quando non ci sono acquisti */
-.checkout-form .no-purchases {
+.empty-cart {
     text-align: center;
-    font-size: 1.2em;
-    color: #666;
+    margin-top: 20px;
+    font-style: italic;
+    color: #333;  /* Testo grigio scuro */
+}
+
+.checkout-form {
+    text-align: center;
     margin-top: 20px;
 }
+
+.checkout-form button {
+    background-color: #00FF00;  /* Verde fluo */
+    color: #000000;  /* Testo nero */
+    border: none;
+    padding: 12px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.checkout-form button:hover {
+    background-color: #45a049;  /* Verde scuro al passaggio del mouse */
+}
+
+.btn {
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background-color: #007bff; /* Blu primario */
+    color: #ffffff; /* Testo bianco */
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3; /* Blu più scuro al passaggio del mouse */
+}
+
+.btn-danger {
+    background-color: #dc3545; /* Rosso */
+    color: #ffffff; /* Testo bianco */
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #c82333; /* Rosso più scuro al passaggio del mouse */
+}
+
+
+/* Stili per la pagina di tutte le transazioni */
+.purchases-container {
+    max-width: 800px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.8);  /* Sfondo bianco con trasparenza */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
+}
+
+.purchases-container h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #00FF00;  /* Verde fluo */
+}
+
+.purchases-container h3 {
+    text-align: center;
+    margin-top: 30px;
+    color: #333;  /* Testo grigio scuro */
+}
+
+.purchase-items-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.purchase-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f0f0f0;  /* Sfondo grigio chiaro */
+    border-radius: 5px;
+}
+
+.purchase-item-info {
+    margin-bottom: 10px;
+}
+
+.purchase-item-info strong {
+    color: #333;  /* Testo grigio scuro */
+}
+
+.no-purchases {
+    text-align: center;
+    margin-top: 20px;
+    font-style: italic;
+    color: #333;  /* Testo grigio scuro */
+}
+
 
 /* Stili per la pagina di checkout */
 .checkout-container {
+    max-width: 800px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.8);  /* Sfondo bianco con trasparenza */
     padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
 }
 
 .checkout-container h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
     text-align: center;
+    margin-bottom: 20px;
+    color: #00FF00;  /* Verde fluo */
 }
 
 .checkout-container h2 {
-    font-size: 1.5em;
-    margin-bottom: 15px;
+    margin-top: 30px;
     text-align: center;
+    text-shadow: 0px 0px 10px black, 0px 0px 15px black, 0px 0px 200px black;
 }
 
-.checkout-container ul {
+.purchase-items-list {
     list-style-type: none;
-    padding: 20px;
-    background-color: black;
-    border-radius:10px;
-    box-shadow: inset 0px 0px 10px #00FF00;
+    padding: 0;
+    background-color: transparent;
 }
 
-.checkout-container li {
-    box-shadow: 0px 0px 10px #00FF00;
-    border-radius: 10px;
+ul.purchase-items-list {
+    background-color: transparent;
+}
+
+li.purchase-item {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.purchase-item {
+    margin-bottom: 20px;
     padding: 15px;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background-color: #f0f0f0;  /* Sfondo grigio chiaro */
+    border-radius: 5px;
 }
 
-.checkout-container li strong {
-    font-weight: bold;
-    color: #ffc000;
+.purchase-item-info {
+    margin-bottom: 10px;
 }
 
-.checkout-container .purchase-item-info {
-    width: 100%;
-    color: #00FF00;
+.purchase-item-info strong {
+    color: #333;  /* Testo grigio scuro */
 }
 
-.checkout-container .purchase-item-info a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-.checkout-container .purchase-item-info a:hover {
-    text-decoration: underline;
-}
-
-/* Stili per quando non ci sono acquisti */
-.checkout-container .no-purchases {
+.no-purchases {
     text-align: center;
-    font-size: 1.2em;
-    color: #666;
     margin-top: 20px;
+    font-style: italic;
+    color: #333;  /* Testo grigio scuro */
 }
 
 /* Stili per il form di aggiornamento del gioco */
@@ -1095,6 +1026,68 @@ h1 {
 }
 
 
+/* Stili per la pagina di notifiche */
+.notifications-page {
+    max-width: 800px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.8);  /* Sfondo bianco con trasparenza */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  /* Ombra leggera */
+}
+
+.notifications-page h1, .notifications-page h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #00FF00;  /* Verde fluo */
+}
+
+.notifications-page h2 {
+    margin-top: 30px;
+    text-shadow: 0px 0px 10px black, 0px 0px 15px black, 0px 0px 200px black;
+}
+
+.notifications-page p {
+    color: black;
+}
+
+.notifications-page ul {
+    list-style-type: none;
+    padding: 0;
+    background-color: transparent;
+}
+
+.notifications-page ul li {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;  /* Sfondo grigio chiaro */
+    border-radius: 5px;
+}
+
+.notifications-page ul li strong {
+    color: #333;  /* Testo grigio scuro */
+}
+
+.notifications-page form {
+    display: inline-block;
+}
+
+.notifications-page button {
+    background-color: #00FF00;  /* Verde fluo */
+    color: #000000;  /* Testo nero */
+    border: none;
+    padding: 8px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.notifications-page button:hover {
+    background-color: #45a049;  /* Verde scuro al passaggio del mouse */
+}
 
 
 

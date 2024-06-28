@@ -1,0 +1,7 @@
+.vs/
+.vscode/
+out/
+build/
+.idea/
+__pycache__/
+.exe

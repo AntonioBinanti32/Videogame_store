@@ -56,7 +56,7 @@ Avviare quindi l'eseguibile `videogame_store.exe` nella directory `/go/`.
 Per avviare il modulo Python andare nella directory `/python` e da prompt eseguire il comando: `python app.py`
 
 #### MongoDB
-Per avere una visione completa dell'applicativo importare nel database MongoDB i json situatu nella cartella `/collections`
+Per avere una visione completa dell'applicativo importare nel database MongoDB i json situati nella cartella `/collections`
 
 ### Accesso e Funzionalità
 
